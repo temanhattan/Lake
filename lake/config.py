@@ -20,6 +20,10 @@ class Config:
     duplicate_scan_limit: int = 2500
     context_target_tokens: int = 500
     secret_scan: bool = True
+    mcp_redact_secrets: bool = True
+    mcp_allowed_projects: list = None
+    mcp_audit_log: str = "./data/mcp-audit.jsonl"
+    mcp_requests_per_minute: int = 60
 
 
 def load_config(path="config.toml"):
