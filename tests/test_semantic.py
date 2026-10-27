@@ -1,9 +1,12 @@
 import unittest
+import tempfile
+from pathlib import Path
 from lake.chunking import chunk_messages
 from lake.config import Config
 from lake.db import connect
 from lake.embeddings import EmbeddingQueue
 from lake.library import import_chats
+from lake.vector_index import NumpyMemmapIndex, create_vector_index
 
 class ChunkerTests(unittest.TestCase):
     def test_tiny_chat_and_user_reply_group(self):
@@ -56,6 +59,35 @@ class EmbeddingQueueTests(unittest.TestCase):
         queue.enqueue_chat(cid); queue.run_once()
         self.assertEqual(self.db.execute("SELECT status FROM embedding_jobs WHERE chat_id=?",(cid,)).fetchone()[0],"ready")
         self.assertEqual(calls.count(calls[0]),1)
+
+class VectorIndexTests(unittest.TestCase):
+    def setUp(self):
+        self.db=connect(":memory:");self.temp=tempfile.TemporaryDirectory(dir=Path(__file__).parent)
+        self.index=NumpyMemmapIndex(self.temp.name);self.addCleanup(self.cleanup)
+    def cleanup(self):
+        self.index.invalidate();self.db.close();self.temp.cleanup()
+    def add_vector(self,title,vector,model="nomic-embed-text",kind="chunk"):
+        import_chats(self.db,[{"source":"manual","title":title,"messages":[{"role":"user","content":title}]}])
+        cid=self.db.execute("SELECT id FROM chats WHERE title=?",(title,)).fetchone()[0]
+        import struct,hashlib
+        blob=struct.pack("<"+"f"*len(vector),*vector)
+        self.db.execute("INSERT INTO embeddings(chat_id,message_start_idx,message_end_idx,kind,model_name,dim,vector,content_hash,created_at) VALUES(?,0,0,?,?,?, ?,?,'2026-01-01')",
+          (cid,kind,model,len(vector),blob,hashlib.sha256(title.encode()).hexdigest()));self.db.commit();return cid
+    def test_memmap_cosine_search_and_model_isolation(self):
+        first=self.add_vector("close",[1,0,0]);self.add_vector("far",[0,1,0]);self.add_vector("other model",[1,0,0],"different")
+        hits=self.index.search(self.db,[.98,.02,0],"nomic-embed-text",{},10)
+        self.assertEqual(hits[0]["chat_id"],first)
+        self.assertEqual(len(hits),2)
+        self.db.execute("UPDATE embeddings SET stale=1 WHERE model_name='nomic-embed-text' AND chat_id=?",(first,));self.db.commit();self.index.invalidate()
+        hits=self.index.search(self.db,[1,0,0],"nomic-embed-text",{},10)
+        self.assertEqual(len(hits),1)
+        self.assertNotEqual(hits[0]["chat_id"],first)
+    def test_vector_index_factory_selects_available_backend(self):
+        index=create_vector_index(self.db,self.temp.name)
+        self.assertIn(index.name,("sqlite-vec","numpy-memmap"))
+        if index.name=="sqlite-vec":index.invalidate()
+
+if __name__=="__main__": unittest.main()
 
 if __name__=="__main__": unittest.main()
 

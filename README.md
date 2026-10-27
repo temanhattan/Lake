@@ -5,11 +5,12 @@ Lake is a private, local-first gallery for AI conversations. It uses Python's st
 ## Run
 
 1. Install Python 3.11 or newer.
-2. Copy `config.example.toml` to `config.toml` and adjust paths or Ollama settings if needed.
-3. Run `python -m lake` from this folder.
-4. Open <http://127.0.0.1:8765>.
+2. Install the local vector fallback: `python -m pip install -r requirements.txt`. Optionally install `sqlite-vec` for its SQLite extension backend; Lake falls back to NumPy when the extension is unavailable.
+3. Copy `config.example.toml` to `config.toml` and adjust paths or Ollama settings if needed.
+4. Run `python -m lake` from this folder.
+5. Open <http://127.0.0.1:8765>.
 
-The SQLite database is created at `./data/lake.db`. Lake uses only Python's standard library. FTS5 is required; it is included in most standard Python SQLite builds. To import every supported file in the configured import folder from a command line, run `python -m lake import-folder` (or pass a folder path).
+The SQLite database is created at `./data/lake.db`. SQLite FTS5 is required and is included in most standard Python SQLite builds. Semantic vectors are stored in SQLite; NumPy provides the default memory-mapped cosine search backend. The app itself makes no remote calls. Ollama requests are restricted to a local URL. To import every supported file in the configured import folder from a command line, run `python -m lake import-folder` (or pass a folder path).
 
 ## Import
 
