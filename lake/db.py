@@ -82,6 +82,19 @@ def connect(path):
     return db
 
 
+def connect_readonly(path):
+    """Open an existing Lake database with SQLite's physical mode=ro guard."""
+    resolved = Path(path).resolve()
+    if not resolved.is_file():
+        raise FileNotFoundError(f"Lake database does not exist: {resolved}")
+    uri = resolved.as_uri() + "?mode=ro"
+    db = sqlite3.connect(uri, uri=True, check_same_thread=False)
+    db.row_factory = sqlite3.Row
+    db.execute("PRAGMA query_only=ON")
+    db.execute("PRAGMA foreign_keys=ON")
+    return db
+
+
 def migrate(db):
     version = db.execute("PRAGMA user_version").fetchone()[0]
     for i in range(version, len(MIGRATIONS)):
