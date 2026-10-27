@@ -10,5 +10,6 @@ vector_cache_path = "./data/vector-cache"
 embedding_chunk_tokens = 400
 embedding_overlap_tokens = 40
 duplicate_similarity_threshold = 0.82
+duplicate_scan_limit = 2500
 context_target_tokens = 500
 secret_scan = true

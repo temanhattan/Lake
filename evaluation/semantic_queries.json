@@ -1,0 +1,22 @@
+[
+  {"query":"How can I make a database lookup faster?","expected_source_id":"seed-1"},
+  {"query":"Improve the speed of a filtered database request","expected_source_id":"seed-1"},
+  {"query":"SQL query taking too long while searching records","expected_source_id":"seed-1"},
+  {"query":"Which index helps speed up a filter?","expected_source_id":"seed-1"},
+  {"query":"Remove empty lines from a comma separated data file","expected_source_id":"seed-2"},
+  {"query":"Clean blank records from a CSV without breaking quoted fields","expected_source_id":"seed-2"},
+  {"query":"How do I filter out empty spreadsheet rows in Python?","expected_source_id":"seed-2"},
+  {"query":"Skip rows with no values when reading delimited text","expected_source_id":"seed-2"},
+  {"query":"Keep a local development website accessible only on this computer","expected_source_id":"seed-3"},
+  {"query":"Bind a Vite server to the loopback interface","expected_source_id":"seed-3"},
+  {"query":"Prevent other machines from opening my development server","expected_source_id":"seed-3"},
+  {"query":"Configure the local web host address for development","expected_source_id":"seed-3"},
+  {"query":"Parse dates from text logs with a regular expression","expected_source_id":"seed-4"},
+  {"query":"Capture a timestamp field from each log line","expected_source_id":"seed-4"},
+  {"query":"Extract time values from application output safely","expected_source_id":"seed-4"},
+  {"query":"Handle malformed log entries while parsing date strings","expected_source_id":"seed-4"},
+  {"query":"Export a conversation while keeping fenced source code intact","expected_source_id":"seed-5"},
+  {"query":"Preserve formatting and code when saving chat history as markdown","expected_source_id":"seed-5"},
+  {"query":"Create a readable transcript file with role headings","expected_source_id":"seed-5"},
+  {"query":"Keep triple backtick examples unchanged in an exported chat","expected_source_id":"seed-5"}
+]
