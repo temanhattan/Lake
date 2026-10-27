@@ -84,3 +84,20 @@ Core operations live in the `lake/` library layer, separate from the HTTP/UI and
 ## Development
 
 Run the test suite with `python -m unittest discover -s tests -v`. Tests cover parsers, import deduplication, chunking, resumable embedding jobs, model staleness, FTS and vector search, RRF, similar chats, duplicates, card validation, and context size. `python -m lake --seed` loads the five fake sample chats. Demo exports are in `demo/`.
+
+
+## Lake brand and loading states
+
+The hand-drawn Lake assets are under `lake/static/brand/`. Visit `/design-system#logo` for light and dark variants, 16/32/64/256 px monogram previews, and sizing/clear-space guidance. `LakeLoader` is available as a custom element and as the `lakeLoader()` inline-SVG function.
+
+Loader use checklist:
+
+- First-run startup overlay: once per session, skippable.
+- Search and filter results: small L after 200 ms; result-card placeholders are static.
+- Chat detail fetch.
+- Import: per-file/paste progress, reported as processed items.
+- Embedding: determinate from the server's embedded/total counts.
+- Continue-block generation: indeterminate while polling the local job.
+- Card-generation queue: indeterminate while the server reports pending cards; no per-job fraction exists in the current endpoint.
+
+Backup/export and button actions do not currently expose an observable async progress state. Command palette filtering is synchronous local work, so it has no loading indicator. Loading indicators have not been added to those flows.
