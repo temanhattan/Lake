@@ -38,4 +38,9 @@ def load_config(path="config.toml"):
         raise ValueError("ollama_url must point to this machine (localhost, 127.0.0.1, or ::1)")
     if config.host not in {"localhost","127.0.0.1","::1"}:
         raise ValueError("Lake only binds to this machine")
+    if config.mcp_allowed_projects is not None and (not isinstance(config.mcp_allowed_projects,list) or any(not isinstance(x,str) for x in config.mcp_allowed_projects)):
+        raise ValueError("mcp_allowed_projects must be a list of project names")
+    if not isinstance(config.mcp_redact_secrets,bool):raise ValueError("mcp_redact_secrets must be true or false")
+    if not isinstance(config.mcp_requests_per_minute,int) or config.mcp_requests_per_minute<1:
+        raise ValueError("mcp_requests_per_minute must be a positive integer")
     return config

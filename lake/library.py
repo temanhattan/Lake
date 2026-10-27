@@ -104,6 +104,11 @@ def search(db, query="", filters=None, sort="relevance", limit=100, offset=0):
     if filters.get("from"): clauses.append("c.created_at>=?"); args.append(filters["from"])
     if filters.get("to"): clauses.append("c.created_at<=?"); args.append(filters["to"])
     if filters.get("tag"): clauses.append("EXISTS(SELECT 1 FROM chat_tags ct JOIN tags t ON t.id=ct.tag_id WHERE ct.chat_id=c.id AND t.name=?)"); args.append(filters["tag"])
+    if filters.get("_allowed_project_ids") is not None:
+        ids=sorted(filters["_allowed_project_ids"])
+        if ids:
+            clauses.append("c.project_id IN ("+",".join("?" for _ in ids)+")"); args.extend(ids)
+        else: clauses.append("0")
     base = " WHERE " + " AND ".join(clauses) if clauses else ""
     if query.strip():
         tokens=re.findall(r"\w+",query,flags=re.UNICODE)

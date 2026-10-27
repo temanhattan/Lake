@@ -24,6 +24,11 @@ def allowed_chat_ids(db,filters):
             clauses.append(f"c.{col}{op}?"); value=int(filters[key]) if key in ("pinned","archived") else filters[key]; args.append(value)
     if filters.get("tag"):
         clauses.append("EXISTS(SELECT 1 FROM chat_tags ct JOIN tags t ON t.id=ct.tag_id WHERE ct.chat_id=c.id AND t.name=?)");args.append(filters["tag"])
+    if filters.get("_allowed_project_ids") is not None:
+        ids=sorted(filters["_allowed_project_ids"])
+        if ids:
+            clauses.append("c.project_id IN ("+",".join("?" for _ in ids)+")");args.extend(ids)
+        else: clauses.append("0")
     rows=db.execute("SELECT c.id FROM chats c"+(" WHERE "+" AND ".join(clauses) if clauses else ""),args)
     return {r[0] for r in rows}
 
