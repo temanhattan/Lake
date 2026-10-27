@@ -20,7 +20,7 @@ The importer reports added, updated, skipped, and failed items. Re-importing ide
 
 ## Ollama
 
-Install and start Ollama separately for cards, context, and semantic search. Pull `qwen2.5:7b` and `nomic-embed-text` locally. Set `ollama_url`, `model`, and `embedding_model` in `config.toml`. For multilingual chat collections, set `embedding_model = "bge-m3"` and pull that model. New imports and ready cards are embedded in a durable background queue; progress and failed-job retries appear above the library. Switching models marks the previous vectors stale and schedules the current model. Searches never combine models. Card and embedding prompts treat transcript text as untrusted data.
+Install and start Ollama separately for cards, context, and semantic search. Pull `qwen2.5:3b` and `nomic-embed-text` locally. Set `ollama_url`, `model`, and `embedding_model` in `config.toml`; change `model` there to switch chat models. `num_ctx` (default 8192) is sent explicitly to Ollama for card generation, transcript summaries, context generation, and reranking. Long transcripts are summarized in ordered chunks sized for that context window, then summaries are reduced in order before card generation so later conversation sections are retained. For multilingual chat collections, set `embedding_model = "bge-m3"` and pull that model. New imports and ready cards are embedded in a durable background queue; progress and failed-job retries appear above the library. Switching models marks the previous vectors stale and schedules the current model. Searches never combine models. Card and embedding prompts treat transcript text as untrusted data.
 
 ## Semantic search
 

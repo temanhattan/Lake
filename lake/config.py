@@ -11,7 +11,9 @@ class Config:
     db_path: str = "./data/lake.db"
     import_folder: str = "./imports"
     ollama_url: str = "http://127.0.0.1:11434"
-    model: str = "qwen2.5:7b"
+    model: str = "qwen2.5:3b"
+    num_ctx: int = 8192
+    card_chunk_tokens: int = 5000
     embedding_model: str = "nomic-embed-text"
     vector_cache_path: str = "./data/vector-cache"
     embedding_chunk_tokens: int = 400
@@ -38,6 +40,10 @@ def load_config(path="config.toml"):
         raise ValueError("ollama_url must point to this machine (localhost, 127.0.0.1, or ::1)")
     if config.host not in {"localhost","127.0.0.1","::1"}:
         raise ValueError("Lake only binds to this machine")
+    if not isinstance(config.num_ctx,int) or config.num_ctx<4096:
+        raise ValueError("num_ctx must be an integer of at least 4096")
+    if not isinstance(config.card_chunk_tokens,int) or config.card_chunk_tokens<256 or config.card_chunk_tokens>=config.num_ctx:
+        raise ValueError("card_chunk_tokens must be at least 256 and smaller than num_ctx")
     if config.mcp_allowed_projects is not None and (not isinstance(config.mcp_allowed_projects,list) or any(not isinstance(x,str) for x in config.mcp_allowed_projects)):
         raise ValueError("mcp_allowed_projects must be a list of project names")
     if not isinstance(config.mcp_redact_secrets,bool):raise ValueError("mcp_redact_secrets must be true or false")
