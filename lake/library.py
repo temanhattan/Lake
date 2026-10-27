@@ -14,7 +14,7 @@ def content_hash(chat):
 
 
 def import_chats(db, chats):
-    report = {"added": 0, "updated": 0, "skipped": 0, "failed": [], "queued": []}
+    report = {"added": 0, "updated": 0, "skipped": 0, "failed": [], "queued": [], "changed": []}
     for chat in chats:
         try:
             if not chat.get("messages"):
@@ -53,6 +53,7 @@ def import_chats(db, chats):
             db.execute("INSERT OR IGNORE INTO cards(chat_id,status) VALUES(?,'pending')", (chat_id,))
             reindex_chat(db, chat_id)
             db.commit()
+            if chat_id not in report["changed"]:report["changed"].append(chat_id)
         except Exception as exc:
             db.rollback(); report["failed"].append({"title": chat.get("title", "Untitled"), "reason": str(exc)})
     return report

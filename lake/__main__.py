@@ -3,7 +3,10 @@ from pathlib import Path
 from .config import load_config
 from .db import connect
 from .jobs import CardQueue
-from .web import serve
+from .embeddings import EmbeddingQueue
+from .vector_index import create_vector_index
+from .semantic_search import SemanticSearch
+from .web import serve, Handler
 from .library import import_chats, NOW, parse_import
 
 def seed(db):
@@ -50,7 +53,13 @@ def main():
             total["failed"].extend(report["failed"])
         print(json.dumps(total,ensure_ascii=False,indent=2)); return
     if "--seed" in args: print(seed(db))
-    jobs=CardQueue(db,cfg)
+    vector_index=create_vector_index(db,cfg.vector_cache_path)
+    embeddings=EmbeddingQueue(db,cfg)
+    embeddings.set_index(vector_index)
+    Handler.embeddings=embeddings
+    Handler.semantic=SemanticSearch(vector_index,embeddings,cfg)
+    jobs=CardQueue(db,cfg,embeddings)
+    Handler.jobs=jobs
     for row in db.execute("SELECT chat_id FROM cards WHERE status='pending' AND edited_by_user=0"):
         jobs.enqueue(row[0])
     serve(db,cfg,jobs)

@@ -5,8 +5,9 @@ from .library import reindex_chat, validate_card
 
 
 class CardQueue:
-    def __init__(self, db, config):
+    def __init__(self, db, config, embedding_queue=None):
         self.db, self.config = db, config
+        self.embedding_queue=embedding_queue
         self.queue = queue.Queue()
         self.context_queue=queue.Queue(); self.context_results={}
         threading.Thread(target=self._worker, daemon=True, name="lake-card-jobs").start()
@@ -47,7 +48,9 @@ class CardQueue:
                 obj=validate_card(json.loads(self._ollama(prompt, strict_json=True)))
                 db.execute("UPDATE cards SET problem=?,environment=?,solution_steps=?,result=?,caveats=?,suggested_tags=?,status='ready',error=NULL,generated_by=?,generated_at=?,edited_by_user=0 WHERE chat_id=?",
                     (obj["problem"],obj["environment"],json.dumps(obj["solution_steps"]),obj["result"],json.dumps(obj["caveats"]),json.dumps(obj["suggested_tags"]),self.config.model,datetime.now(timezone.utc).isoformat(),chat_id))
-                reindex_chat(db,chat_id); db.commit(); return
+                reindex_chat(db,chat_id); db.commit()
+                if self.embedding_queue:self.embedding_queue.enqueue_chat(chat_id)
+                return
             except Exception as exc: error=str(exc)
         db.execute("UPDATE cards SET status='failed',error=? WHERE chat_id=?",(error,chat_id)); db.commit()
 

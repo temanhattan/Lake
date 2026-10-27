@@ -9,7 +9,7 @@ from .library import (search, chat_detail, parse_import, import_chats, secret_wa
 STATIC=Path(__file__).parent/"static"
 
 class Handler(BaseHTTPRequestHandler):
-    db=None; config=None; jobs=None
+    db=None; config=None; jobs=None; embeddings=None; semantic=None
     def setup(self):
         super().setup()
         from .db import connect
@@ -36,8 +36,15 @@ class Handler(BaseHTTPRequestHandler):
             if not q.get("archived"): filters["archived"]=False
             for k in ("pinned","archived"):
                 if q.get(k): filters[k]=q[k][0]=="1"
-            rows=search(self.db,q.get("q",[""])[0],filters,q.get("sort",["relevance"])[0],100)
-            return self._json([dict(r) for r in rows])
+            query=q.get("q",[""])[0]; mode=q.get("mode",["hybrid"])[0]
+            if self.semantic:
+                result=self.semantic.search(self.db,query,filters,mode,100,q.get("rerank",["0"])[0]=="1")
+                result["sort"]=q.get("sort",["relevance"])[0]
+                if result["sort"] in ("newest","oldest"):
+                    result["results"].sort(key=lambda r:r.get("created_at") or "",reverse=result["sort"]=="newest")
+                return self._json(result)
+            rows=search(self.db,query,filters,q.get("sort",["relevance"])[0],100)
+            return self._json({"results":[dict(r) for r in rows],"mode":"keyword","backend":None})
         if path.startswith("/api/chat/"):
             d=chat_detail(self.db,path.split("/")[-1])
             if not d: return self._json({"error":"Chat not found"},404)
@@ -54,6 +61,7 @@ class Handler(BaseHTTPRequestHandler):
         if path=="/api/projects": return self._json([dict(r) for r in self.db.execute("SELECT * FROM projects ORDER BY name")])
         if path=="/api/filters":
             return self._json({"models":[r[0] for r in self.db.execute("SELECT DISTINCT model_used FROM chats WHERE model_used IS NOT NULL ORDER BY 1")],"tags":[r[0] for r in self.db.execute("SELECT name FROM tags ORDER BY name")],"projects":[dict(r) for r in self.db.execute("SELECT id,name FROM projects ORDER BY name")]})
+        if path=="/api/embedding-progress":return self._json(self.embeddings.progress() if self.embeddings else {"model":None,"total":0,"embedded":0,"pending":0,"failed":0})
         if path.startswith("/api/context/"):
             job_id=path.rsplit("/",1)[-1]; return self._json(self.jobs.context_results.get(job_id,{"status":"missing"}))
         return self._send(404,b"")
@@ -78,10 +86,15 @@ class Handler(BaseHTTPRequestHandler):
                     for k in ("added","updated","skipped"): total[k]+=report[k]
                     total["failed"].extend(report["failed"])
                     for chat_id in report.get("queued",[]): self.jobs.enqueue(chat_id)
+                    if self.embeddings:
+                        for chat_id in report.get("changed",[]):self.embeddings.enqueue_chat(chat_id)
                 except Exception as exc: total["failed"].append({"title":name,"reason":str(exc)})
             return self._json(total)
         try: obj=json.loads(self._body() or b"{}")
         except Exception: return self._json({"error":"Invalid JSON"},400)
+        if path=="/api/embeddings/retry":
+            if not self.embeddings:return self._json({"error":"Semantic search is not initialized"},503)
+            self.embeddings.enqueue_all();return self._json({"queued":True})
         if path.startswith("/api/chat/"):
             chat_id=path.split("/")[-1]; action=obj.get("action")
             if action in ("pin","archive","rename","delete","project","tag"):
@@ -112,7 +125,9 @@ class Handler(BaseHTTPRequestHandler):
                 except ValueError as exc: return self._json({"error":str(exc)},400)
                 self.db.execute("UPDATE cards SET problem=?,environment=?,solution_steps=?,result=?,caveats=?,suggested_tags=?,status='ready',error=NULL,edited_by_user=1 WHERE chat_id=?",
                   (c["problem"],c["environment"],json.dumps(c["solution_steps"]),c["result"],json.dumps(c["caveats"]),json.dumps(c["suggested_tags"]),chat_id))
-                reindex_chat(self.db,chat_id); self.db.commit(); return self._json({"ok":True})
+                reindex_chat(self.db,chat_id); self.db.commit()
+                if self.embeddings:self.embeddings.enqueue_chat(chat_id)
+                return self._json({"ok":True})
             if obj.get("action")=="context":
                 d=chat_detail(self.db,chat_id)
                 if not d: return self._json({"error":"Chat not found"},404)

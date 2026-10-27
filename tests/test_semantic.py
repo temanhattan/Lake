@@ -8,6 +8,7 @@ from lake.embeddings import EmbeddingQueue
 from lake.library import import_chats
 from lake.vector_index import NumpyMemmapIndex, create_vector_index
 from lake.semantic_search import rrf_merge
+from lake.semantic_search import SemanticSearch
 
 class ChunkerTests(unittest.TestCase):
     def test_tiny_chat_and_user_reply_group(self):
@@ -96,6 +97,24 @@ class HybridTests(unittest.TestCase):
         self.assertTrue(merged[0]["card_hit"])
         self.assertEqual(merged[0]["keyword_rank"],2)
         self.assertEqual(merged[0]["semantic_rank"],1)
+    def test_semantic_and_hybrid_respect_local_index_results(self):
+        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+            db=connect(str(Path(folder)/"search.db"))
+            try:
+                import_chats(db,[{"source":"manual","title":"Engine freeze","messages":[{"role":"user","content":"The engine freezes when load increases."},{"role":"assistant","content":"Reduce the batch size and monitor memory."}]}])
+                cid=db.execute("SELECT id FROM chats").fetchone()[0]
+                class Index:
+                    name="test-index"
+                    def search(self,db,query,model,filters,limit):return [{"chat_id":cid,"kind":"chunk","score":0.93,"message_start_idx":0,"message_end_idx":1}]
+                class Embedder:
+                    embedder=staticmethod(lambda texts:[[0.2,0.8]])
+                searcher=SemanticSearch(Index(),Embedder(),Config(db_path=str(Path(folder)/"search.db")))
+                semantic=searcher.search(db,"machine stalls under heavy work",{},"semantic")
+                hybrid=searcher.search(db,"machine stalls under heavy work",{},"hybrid")
+                self.assertEqual(semantic["results"][0]["id"],cid)
+                self.assertEqual(hybrid["results"][0]["id"],cid)
+                self.assertIn("engine freezes",hybrid["results"][0]["match_content"])
+            finally:db.close()
 
 if __name__=="__main__": unittest.main()
 
