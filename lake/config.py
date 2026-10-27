@@ -17,6 +17,7 @@ class Config:
     embedding_chunk_tokens: int = 400
     embedding_overlap_tokens: int = 40
     duplicate_similarity_threshold: float = 0.82
+    duplicate_scan_limit: int = 2500
     context_target_tokens: int = 500
     secret_scan: bool = True
 

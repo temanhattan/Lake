@@ -45,6 +45,14 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(result)
             rows=search(self.db,query,filters,q.get("sort",["relevance"])[0],100)
             return self._json({"results":[dict(r) for r in rows],"mode":"keyword","backend":None})
+        if path=="/api/duplicates":
+            if not self.semantic:return self._json({"error":"Semantic search is not initialized"},503)
+            try:threshold=float(q.get("threshold",[self.config.duplicate_similarity_threshold])[0])
+            except ValueError:return self._json({"error":"Threshold must be numeric"},400)
+            return self._json(self.semantic.duplicates(self.db,threshold,self.config.duplicate_scan_limit))
+        if path.startswith("/api/similar/"):
+            if not self.semantic:return self._json({"error":"Semantic search is not initialized"},503)
+            return self._json(self.semantic.similar(self.db,path.rsplit("/",1)[-1],10))
         if path.startswith("/api/chat/"):
             d=chat_detail(self.db,path.split("/")[-1])
             if not d: return self._json({"error":"Chat not found"},404)

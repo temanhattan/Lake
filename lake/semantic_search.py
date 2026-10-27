@@ -3,6 +3,7 @@ import json
 import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
+import numpy as np
 
 from .library import search as keyword_search
 
@@ -80,20 +81,15 @@ class SemanticSearch:
         keyword_rows=[];semantic_rows=[];vector_error=None
         if mode=="hybrid":
             from .db import connect
-            def keyword_task():
-                conn=connect(self.config.db_path)
-                try:return [dict(r) for r in keyword_search(conn,query,filters,limit=limit*5)]
-                finally:conn.close()
-            def semantic_task():
-                conn=connect(self.config.db_path)
-                try:return self._semantic_hits(conn,query,filters,limit*5)
-                finally:conn.close()
+            kw_conn=connect(self.config.db_path);vec_conn=connect(self.config.db_path)
             with ThreadPoolExecutor(max_workers=2) as pool:
-                future_kw=pool.submit(keyword_task)
-                future_vec=pool.submit(semantic_task)
-                keyword_rows=future_kw.result()
-                try:semantic_rows=future_vec.result()
-                except Exception as exc:vector_error=str(exc)
+                try:
+                    future_kw=pool.submit(lambda:[dict(r) for r in keyword_search(kw_conn,query,filters,limit=limit*5)])
+                    future_vec=pool.submit(self._semantic_hits,vec_conn,query,filters,limit*5)
+                    keyword_rows=future_kw.result()
+                    try:semantic_rows=future_vec.result()
+                    except Exception as exc:vector_error=str(exc)
+                finally:kw_conn.close();vec_conn.close()
         else:
             try:semantic_rows=self._semantic_hits(db,query,filters,limit*5)
             except Exception as exc:vector_error=str(exc)
@@ -129,3 +125,44 @@ class SemanticSearch:
         order=json.loads(payload["response"]).get("order",[])
         by_id={str(r["id"]):r for r in top};ordered=[by_id.pop(str(cid)) for cid in order if str(cid) in by_id]
         return ordered+list(by_id.values())+rows[20:]
+
+    def similar(self,db,chat_id,limit=10):
+        row=db.execute("SELECT vector,dim FROM embeddings WHERE chat_id=? AND kind='card' AND model_name=? AND stale=0 ORDER BY id DESC LIMIT 1",(chat_id,self.config.embedding_model)).fetchone()
+        if not row:return {"results":[],"error":"This chat has no active card embedding yet. Generate a card and wait for embedding progress."}
+        query=np.frombuffer(row["vector"],dtype="<f4")
+        hits=self.index.search(db,query,self.config.embedding_model,{},max(500,limit*30));grouped={}
+        for hit in hits:
+            if hit["chat_id"]==chat_id:continue
+            item=grouped.setdefault(hit["chat_id"],{"chunk":None,"card":None})
+            key="card" if hit["kind"]=="card" else "chunk"
+            if item[key] is None or hit["score"]>item[key]["score"]:item[key]=hit
+        ranked=[]
+        for cid,item in grouped.items():
+            chunk,card=item["chunk"],item["card"];best=chunk or card
+            score=float(best["score"])+(float(card["score"])*0.05 if card and chunk else 0)
+            chat=db.execute("SELECT c.id,c.title,c.source,c.model_used,c.created_at,ca.problem,ca.result FROM chats c LEFT JOIN cards ca ON ca.chat_id=c.id WHERE c.id=?",(cid,)).fetchone()
+            if chat:ranked.append({**dict(chat),"score":score,"card_hit":bool(card)})
+        ranked.sort(key=lambda x:x["score"],reverse=True)
+        return {"results":ranked[:limit],"model":self.config.embedding_model}
+
+    def duplicates(self,db,threshold=None,limit=None):
+        threshold=self.config.duplicate_similarity_threshold if threshold is None else float(threshold)
+        if not 0<=threshold<=1:raise ValueError("Similarity threshold must be between 0 and 1")
+        scan_limit=int(limit or self.config.duplicate_scan_limit)
+        rows=db.execute("SELECT e.chat_id,e.vector,e.dim,c.title,c.source,c.created_at FROM embeddings e JOIN chats c ON c.id=e.chat_id WHERE e.kind='card' AND e.model_name=? AND e.stale=0 ORDER BY c.updated_at DESC LIMIT ?",(self.config.embedding_model,scan_limit+1)).fetchall()
+        truncated=len(rows)>scan_limit;rows=rows[:scan_limit]
+        if len(rows)<2:return {"pairs":[],"threshold":threshold,"scanned":len(rows),"truncated":truncated,"model":self.config.embedding_model}
+        dims={r["dim"] for r in rows}
+        if len(dims)!=1:raise ValueError("Card embeddings have inconsistent dimensions")
+        matrix=np.vstack([np.frombuffer(r["vector"],dtype="<f4") for r in rows]).astype(np.float32,copy=False)
+        norms=np.linalg.norm(matrix,axis=1);matrix=matrix/np.maximum(norms[:,None],1e-12)
+        pairs=[];block=64
+        for start in range(0,len(rows),block):
+            end=min(start+block,len(rows));scores=matrix[start:end]@matrix.T
+            for local,simrow in enumerate(scores):
+                i=start+local
+                candidates=np.flatnonzero(simrow[i+1:]>=threshold)+i+1
+                for j in candidates:
+                    pairs.append({"left_id":rows[i]["chat_id"],"left_title":rows[i]["title"],"left_source":rows[i]["source"],"right_id":rows[j]["chat_id"],"right_title":rows[j]["title"],"right_source":rows[j]["source"],"score":float(simrow[j])})
+        pairs.sort(key=lambda x:x["score"],reverse=True)
+        return {"pairs":pairs[:500],"threshold":threshold,"scanned":len(rows),"truncated":truncated,"model":self.config.embedding_model}

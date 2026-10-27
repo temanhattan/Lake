@@ -88,6 +88,17 @@ class VectorIndexTests(unittest.TestCase):
         index=create_vector_index(self.db,self.temp.name)
         self.assertIn(index.name,("sqlite-vec","numpy-memmap"))
         if index.name=="sqlite-vec":index.invalidate()
+    def test_similar_chats_and_duplicate_detector_use_card_vectors(self):
+        first=self.add_vector("Repeated issue A",[1,0,0],kind="card")
+        second=self.add_vector("Repeated issue B",[.995,.1,0],kind="card")
+        self.add_vector("Unrelated issue",[0,1,0],kind="card")
+        class Embedder: embedder=staticmethod(lambda texts:[[1,0,0]])
+        service=SemanticSearch(self.index,Embedder(),Config())
+        similar=service.similar(self.db,first,5)
+        self.assertEqual(similar["results"][0]["id"],second)
+        duplicates=service.duplicates(self.db,.9)
+        self.assertEqual((duplicates["scanned"],duplicates["truncated"]),(3,False))
+        self.assertEqual({duplicates["pairs"][0]["left_id"],duplicates["pairs"][0]["right_id"]},{first,second})
 
 class HybridTests(unittest.TestCase):
     def test_rrf_combines_ranks_and_card_hit_boosts(self):
