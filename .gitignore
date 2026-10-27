@@ -3,3 +3,4 @@ __pycache__/
 config.toml
 data/
 backups/
+design-research/
