@@ -88,7 +88,7 @@ Run the test suite with `python -m unittest discover -s tests -v`. Tests cover p
 
 ## Lake brand and loading states
 
-The hand-drawn Lake assets are under `lake/static/brand/`. Visit `/design-system#logo` for light and dark variants, 16/32/64/256 px monogram previews, and sizing/clear-space guidance. `LakeLoader` is available as a custom element and as the `lakeLoader()` inline-SVG function.
+The hand-drawn Lake assets are under `lake/static/brand/`, traced from the clean handwritten reference image supplied for this revision. Visit `/design-system#logo` for light and dark variants, 16/32/64/256 px monogram previews, and sizing/clear-space guidance. `LakeLoader` is available as a custom element and as the `lakeLoader()` inline-SVG function.
 
 Loader use checklist:
 

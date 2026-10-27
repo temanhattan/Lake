@@ -43,13 +43,13 @@ The optional 3D gallery was not started.
 
 - `node --check` passed for `lake/static/app.js`, `lake/static/enhancements.js`, and `lake/static/lake-loader.js`.
 - `git diff --check` passed.
-- A Playwright smoke check against a temporary localhost mock API reported no page errors and no requests outside localhost (19 requests). It confirmed the four logo preview boxes resolve to 16, 32, 64, and 256 CSS px; the mocked embedding status resolved to 0.5; the dark theme updated `theme-color`; and `prefers-reduced-motion: reduce` was active with the loader animation duration reduced to `1e-05s`.
+- A Playwright smoke check against a temporary localhost mock API reported no page errors and no requests outside localhost (15 requests). It confirmed the first-run Skip control, that the favicon SVG loaded, the four logo preview boxes resolved to 16, 32, 64, and 256 CSS px, the mocked embedding status resolved to 0.5, the dark theme updated `theme-color`, and `prefers-reduced-motion: reduce` was active with the loader animation duration reduced to `1e-05s`.
 - Light and dark screenshots are saved in the ignored `design-research/` directory as `brand-system-light.png` and `brand-system-dark.png`.
 
 ## Not verified
 
-The brief names `assets/brand/lake-handwriting-original.jpg`, but that file is missing from this checkout. I inspected the attached screenshot, but it could not be copied into the workspace. The SVG paths are manual approximations based on the screenshot, not a pixel-accurate trace. No overlay comparison with the original was produced, so fidelity to the exact pen path and stroke thickness remains unverified.
+The project-stored `assets/brand/lake-handwriting-original.jpg` is still absent. This revision uses the clean image you supplied in the follow-up as the handwriting reference. I manually refined the SVG paths to that image; no overlay comparison was produced, so exact pixel alignment and pen-path fidelity remain unverified.
 
-The 16 px favicon's legibility has not been inspected. The browser check verified CSS box sizes for the brand-page monogram samples, not their readability at those sizes. No animation frame sequence or performance/main-thread measurement was captured. The browser check used a local mock API, not a live Lake database or a DevTools network panel.
+The updated favicon has not yet been rechecked at 16 px. The earlier browser check verified CSS box sizes for the previous brand-page monogram previews, not readability at those sizes. No animation frame sequence or performance/main-thread measurement was captured. The browser check used a local mock API, not a live Lake database or a DevTools network panel.
 
 The signature overlay currently animates the L but does not fade in the wordmark and draw both underline strokes in sequence. The card queue is indeterminate because the current endpoint exposes pending/queued counts but no per-job progress fraction. Backup/export and button actions have no loader because their current flows do not expose observable async progress; palette filtering is synchronous.
