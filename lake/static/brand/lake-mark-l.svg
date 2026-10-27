@@ -1,1 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="70 0 150 465" fill="none" color="currentColor" role="img" aria-label="Lake L monogram"><path d="M62 153 C54 137 56 106 61 72 C65 42 76 18 89 17 C106 18 124 39 128 65 C133 93 115 113 91 124 C75 131 58 136 35 147 M89 124 C88 174 88 239 89 297 C89 335 90 366 88 387 C84 419 67 439 42 439 C18 438 7 420 12 399 C17 378 35 367 56 371 C75 373 88 385 99 398 C113 414 126 418 143 412" stroke="currentColor" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="145 270 150 310" fill="none" color="currentColor" role="img" aria-label="Lake L monogram">
+  <path d="M240 281 C224 280 216 296 215 323 C214 354 214 379 222 392 C239 383 268 365 276 346 C284 326 277 302 261 289 C254 283 247 280 240 281 C232 315 222 356 222 392 C221 430 221 480 221 519 C219 540 204 561 188 562 C172 562 164 549 168 534 C172 517 188 514 200 520 C215 526 220 542 235 551" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M222 392 C204 399 181 406 158 409" stroke="currentColor" stroke-width="10" stroke-linecap="round"/>
+</svg>
