@@ -147,6 +147,48 @@ def chat_detail(db, chat_id):
     return {"chat":chat,"messages":messages,"card":card,"tags":[x[0] for x in tags]}
 
 
+def get_card(db, chat_id):
+    """Return one card as a JSON-friendly structured object, or None."""
+    row = db.execute("""SELECT c.id,c.title,c.source,c.created_at,c.updated_at,c.project_id,
+        ca.problem,ca.environment,ca.solution_steps,ca.result,ca.caveats,ca.suggested_tags,
+        ca.status,ca.generated_at FROM chats c LEFT JOIN cards ca ON ca.chat_id=c.id
+        WHERE c.id=?""", (chat_id,)).fetchone()
+    if not row:
+        return None
+    item = dict(row)
+    for key in ("solution_steps", "caveats", "suggested_tags"):
+        try: item[key] = json.loads(item[key] or "[]")
+        except (TypeError, json.JSONDecodeError): item[key] = []
+    item["tags"] = [r[0] for r in db.execute(
+        "SELECT t.name FROM tags t JOIN chat_tags ct ON ct.tag_id=t.id WHERE ct.chat_id=? ORDER BY t.name",
+        (chat_id,))]
+    return item
+
+
+def get_chat_excerpt(db, chat_id, start_idx, end_idx, max_messages=20):
+    """Return a bounded range of messages (inclusive message indices)."""
+    if start_idx < 0 or end_idx < start_idx:
+        raise ValueError("start_idx must be nonnegative and end_idx must be >= start_idx")
+    if end_idx - start_idx + 1 > max_messages:
+        raise ValueError(f"Message range is too large; maximum is {max_messages}")
+    chat = db.execute("SELECT id,title,source,created_at FROM chats WHERE id=?", (chat_id,)).fetchone()
+    if not chat:
+        return None
+    messages = db.execute("""SELECT idx,role,content,created_at FROM messages
+        WHERE chat_id=? AND idx BETWEEN ? AND ? ORDER BY idx LIMIT ?""",
+        (chat_id, start_idx, end_idx, max_messages)).fetchall()
+    return {"chat": dict(chat), "messages": [dict(row) for row in messages],
+            "range": {"start_idx": start_idx, "end_idx": end_idx}}
+
+
+def list_projects(db):
+    return [dict(row) for row in db.execute("SELECT id,name,description FROM projects ORDER BY name")]
+
+
+def list_tags(db):
+    return [row[0] for row in db.execute("SELECT name FROM tags ORDER BY name")]
+
+
 def validate_card(obj):
     if not isinstance(obj,dict): raise ValueError("Card must be an object")
     for key in ("problem","environment","result"):
