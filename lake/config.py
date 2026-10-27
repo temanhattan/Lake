@@ -12,6 +12,11 @@ class Config:
     import_folder: str = "./imports"
     ollama_url: str = "http://127.0.0.1:11434"
     model: str = "qwen2.5:7b"
+    embedding_model: str = "nomic-embed-text"
+    vector_cache_path: str = "./data/vector-cache"
+    embedding_chunk_tokens: int = 400
+    embedding_overlap_tokens: int = 40
+    duplicate_similarity_threshold: float = 0.82
     context_target_tokens: int = 500
     secret_scan: bool = True
 

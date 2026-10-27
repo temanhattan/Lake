@@ -1,7 +1,7 @@
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 MIGRATIONS = ["""
 CREATE TABLE chats (
@@ -35,6 +35,34 @@ CREATE VIRTUAL TABLE card_fts USING fts5(chat_id UNINDEXED, title, problem, envi
 CREATE INDEX messages_chat_order ON messages(chat_id,idx);
 CREATE INDEX chats_updated ON chats(updated_at);
 CREATE INDEX chats_source ON chats(source);
+""", """
+DROP TABLE embeddings;
+CREATE TABLE embeddings (
+ id INTEGER PRIMARY KEY,
+ chat_id TEXT NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
+ message_start_idx INTEGER NOT NULL DEFAULT -1,
+ message_end_idx INTEGER NOT NULL DEFAULT -1,
+ kind TEXT NOT NULL CHECK(kind IN ('chunk','card')),
+ model_name TEXT NOT NULL,
+ dim INTEGER NOT NULL,
+ vector BLOB NOT NULL,
+ content_hash TEXT NOT NULL,
+ created_at TEXT NOT NULL,
+ stale INTEGER NOT NULL DEFAULT 0 CHECK(stale IN (0,1)),
+ UNIQUE(chat_id,message_start_idx,message_end_idx,kind,model_name,content_hash)
+);
+CREATE INDEX embeddings_active_model ON embeddings(model_name,stale,kind,chat_id);
+CREATE INDEX embeddings_chat_model ON embeddings(chat_id,model_name,kind);
+CREATE TABLE embedding_jobs (
+ chat_id TEXT NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
+ model_name TEXT NOT NULL,
+ content_hash TEXT NOT NULL,
+ status TEXT NOT NULL CHECK(status IN ('pending','running','ready','failed')),
+ error TEXT,
+ updated_at TEXT NOT NULL,
+ PRIMARY KEY(chat_id,model_name)
+);
+CREATE INDEX embedding_jobs_progress ON embedding_jobs(model_name,status);
 """]
 
 
