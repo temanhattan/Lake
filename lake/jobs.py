@@ -9,21 +9,51 @@ class CardQueue:
         self.db, self.config = db, config
         self.embedding_queue=embedding_queue
         self.queue = queue.Queue()
+        self._progress_lock = threading.Lock()
+        self._queued_chats = []
+        self._active_chat = None
         self.context_queue=queue.Queue(); self.context_results={}
         threading.Thread(target=self._worker, daemon=True, name="lake-card-jobs").start()
         threading.Thread(target=self._context_worker, daemon=True, name="lake-context-jobs").start()
 
-    def enqueue(self, chat_id, force=False): self.queue.put((chat_id, force))
+    def enqueue(self, chat_id, force=False):
+        with self._progress_lock:
+            self._queued_chats.append(chat_id)
+            self.queue.put((chat_id, force))
+
+    def progress(self, db):
+        with self._progress_lock:
+            active = self._active_chat
+            queued = list(self._queued_chats)
+        ids = list(dict.fromkeys(([active] if active else []) + queued))
+        titles = {}
+        if ids:
+            marks = ",".join("?" for _ in ids)
+            titles = {row["id"]: row["title"] for row in db.execute(
+                f"SELECT id,title FROM chats WHERE id IN ({marks})", ids)}
+        pending = db.execute("SELECT COUNT(*) FROM cards WHERE status='pending'").fetchone()[0]
+        pending = max(pending, len(queued) + (1 if active else 0))
+        return {
+            "active": {"id": active, "title": titles.get(active, "")} if active else None,
+            "queued": [{"id": chat_id, "title": titles.get(chat_id, "Untitled conversation")} for chat_id in queued],
+            "pending": pending,
+        }
 
     def _worker(self):
         from .db import connect
         db=connect(self.config.db_path)
         while True:
             chat_id, force = self.queue.get()
+            with self._progress_lock:
+                try: self._queued_chats.remove(chat_id)
+                except ValueError: pass
+                self._active_chat = chat_id
             try: self._generate(db,chat_id, force)
             except Exception as exc:
                 db.execute("UPDATE cards SET status='failed',error=? WHERE chat_id=?", (str(exc),chat_id)); db.commit()
-            finally: self.queue.task_done()
+            finally:
+                with self._progress_lock: self._active_chat = None
+                self.queue.task_done()
 
     def _generate(self, db,chat_id, force):
         card = db.execute("SELECT edited_by_user FROM cards WHERE chat_id=?",(chat_id,)).fetchone()

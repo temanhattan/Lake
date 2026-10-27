@@ -85,6 +85,7 @@ class Handler(BaseHTTPRequestHandler):
         if path=="/api/filters":
             return self._json({"models":[r[0] for r in self.db.execute("SELECT DISTINCT model_used FROM chats WHERE model_used IS NOT NULL ORDER BY 1")],"tags":[r[0] for r in self.db.execute("SELECT name FROM tags ORDER BY name")],"projects":[dict(r) for r in self.db.execute("SELECT id,name FROM projects ORDER BY name")]})
         if path=="/api/embedding-progress":return self._json(self.embeddings.progress() if self.embeddings else {"model":None,"total":0,"embedded":0,"pending":0,"failed":0})
+        if path=="/api/card-progress":return self._json(self.jobs.progress(self.db) if self.jobs else {"active":None,"queued":[],"pending":0})
         if path.startswith("/api/context/"):
             job_id=path.rsplit("/",1)[-1]; return self._json(self.jobs.context_results.get(job_id,{"status":"missing"}))
         return self._send(404,b"")
