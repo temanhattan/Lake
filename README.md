@@ -1,3 +1,5 @@
+![Lake handwritten wordmark](lake/static/brand/readme-header.svg)
+
 # Lake
 
 Lake is a private, local-first gallery for AI conversations. It uses SQLite, Python, and a local NumPy memory-mapped vector index (or optional sqlite-vec). The server binds to `127.0.0.1` only. Ollama is contacted only for requested local generation and semantic queries/embedding jobs.
