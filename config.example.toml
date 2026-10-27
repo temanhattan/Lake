@@ -13,3 +13,7 @@ duplicate_similarity_threshold = 0.82
 duplicate_scan_limit = 2500
 context_target_tokens = 500
 secret_scan = true
+mcp_redact_secrets = true
+mcp_allowed_projects = []
+mcp_audit_log = "./data/mcp-audit.jsonl"
+mcp_requests_per_minute = 60

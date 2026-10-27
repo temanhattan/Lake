@@ -30,15 +30,46 @@ Each chat is split into approximate 400-token user/reply chunks with overlap for
 
 Run `python evaluate_semantic.py` with Ollama running and the configured embedding model available to compute recall@5 for the bundled 20-query sample set. Run `python benchmark_semantic.py` to reproduce warmed vector-query latency over 100,000 768-dimensional vectors. The recorded measurements are in [reports/semantic_benchmark.md](reports/semantic_benchmark.md); they exclude Ollama query embedding time.
 
+## Read-only MCP server
+
+Lake exposes its existing chats to coding agents through the official Python MCP SDK over **stdio**. The MCP process opens the existing database using SQLite URI `mode=ro`; it does not run migrations or expose an HTTP listener. Keyword search works without Ollama. Hybrid and semantic search send query embeddings only to the configured local Ollama URL. Start the process from the Lake repository folder:
+
+```powershell
+python -m lake.mcp_server --config C:\path\to\config.toml
+```
+
+Install dependencies with `python -m pip install -r requirements.txt`. From the Lake repository folder, register it with Claude Code:
+
+```powershell
+claude mcp add --transport stdio lake -- python -m lake.mcp_server --config "C:\path\to\config.toml"
+```
+
+For another MCP client, use an equivalent stdio server entry (launch it with Lake's repository as its working directory):
+
+```json
+{
+  "mcpServers": {
+    "lake": {
+      "command": "python",
+      "args": ["-m", "lake.mcp_server", "--config", "C:\\path\\to\\config.toml"]
+    }
+  }
+}
+```
+
+The tools are `search_chats`, `get_card`, `get_context_block`, `get_chat_excerpt`, `list_projects`, and `list_tags`. Search defaults to hybrid and returns at most 10 chats (5 by default); excerpts are limited to 20 messages. Every response is capped at about 4,000 tokens. Results include an explicit untrusted historical-data notice and delimiters; zero-width/bidi controls are stripped and detected secrets are redacted by default. Historical content is never interpreted as instructions. Verify old solutions before applying them.
+
+Configure `mcp_redact_secrets = true` (default) to redact detected credentials. Set `mcp_allowed_projects = ["Project A"]` to restrict all search and detail tools to named projects; `[]` means all projects. Archived chats are always excluded. Each tool call is appended to `mcp_audit_log` with timestamp, bounded arguments, success/error, and result size. `mcp_requests_per_minute` defaults to 60. Review the JSONL audit file locally. The MCP server itself has no network transport and cannot write to the SQLite database.
+
 ## Data and privacy
 
 Lake stores chats, FTS indexes, embeddings, and durable embedding jobs in SQLite, uses no telemetry, and makes no remote calls. Ollama URLs are restricted to loopback. The optional secret warning scans for common key patterns and high-entropy strings; it only adds a warning badge and never edits content. Imported markdown is escaped before display. Search filters include source, model, project, tag, date range, pinned, and archived. `Ctrl/Cmd+K` focuses search.
 
 Use `python -m lake backup` for a database copy plus Markdown and JSON exports under `backups/`. Context blocks can be copied from a card or generated from the full transcript; the configured target is approximate because token estimation is local and heuristic.
 
-## Future extension points
+## Extension points
 
-Core operations live in the `lake/` library layer, separate from the HTTP/UI layer. There is no MCP server or agent write interface.
+Core operations live in the `lake/` library layer, separate from the HTTP/UI and MCP transport layers. The MCP interface is strictly read-only.
 
 ## Development
 
