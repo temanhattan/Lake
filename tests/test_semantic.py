@@ -7,6 +7,7 @@ from lake.db import connect
 from lake.embeddings import EmbeddingQueue
 from lake.library import import_chats
 from lake.vector_index import NumpyMemmapIndex, create_vector_index
+from lake.semantic_search import rrf_merge
 
 class ChunkerTests(unittest.TestCase):
     def test_tiny_chat_and_user_reply_group(self):
@@ -86,6 +87,15 @@ class VectorIndexTests(unittest.TestCase):
         index=create_vector_index(self.db,self.temp.name)
         self.assertIn(index.name,("sqlite-vec","numpy-memmap"))
         if index.name=="sqlite-vec":index.invalidate()
+
+class HybridTests(unittest.TestCase):
+    def test_rrf_combines_ranks_and_card_hit_boosts(self):
+        merged=rrf_merge([{"id":"keyword-only","title":"Keyword"},{"id":"both","title":"Both"}],
+          [{"chat_id":"both","score":0.8,"card_hit":True,"kind":"chunk"},{"chat_id":"semantic-only","score":0.9,"kind":"card"}],k=60)
+        self.assertEqual(merged[0]["chat_id"],"both")
+        self.assertTrue(merged[0]["card_hit"])
+        self.assertEqual(merged[0]["keyword_rank"],2)
+        self.assertEqual(merged[0]["semantic_rank"],1)
 
 if __name__=="__main__": unittest.main()
 
