@@ -41,6 +41,7 @@ class SemanticSearch:
 
     @staticmethod
     def _snippet_for_hit(db,hit):
+        if hit.get("text_content"):return hit["text_content"],None
         if hit["kind"]=="card":
             card=db.execute("SELECT problem,result FROM cards WHERE chat_id=?",(hit["chat_id"],)).fetchone()
             return ((card["problem"]+"\n\n"+card["result"]).strip() if card else ""),None
@@ -52,7 +53,7 @@ class SemanticSearch:
     def _semantic_hits(self,db,query,filters,limit):
         vector=self._embed_query(query)
         if not vector:return []
-        candidates=self.index.search(db,vector,self.config.embedding_model,filters,max(1000,limit*20))
+        candidates=self.index.search(db,vector,self.config.embedding_model,filters,max(1000,limit*10))
         by_chat={}
         for hit in candidates:
             item=by_chat.setdefault(hit["chat_id"],{"best_chunk":None,"best_card":None})
@@ -69,7 +70,11 @@ class SemanticSearch:
             if card and chunk:item["score"]+=max(0.0,float(card["score"]))*0.05
             result.append(item)
         result.sort(key=lambda x:x["score"],reverse=True)
-        for rank,row in enumerate(result,1):row["semantic_rank"]=rank
+        for rank,row in enumerate(result,1):
+            row["semantic_rank"]=rank
+            if rank<=limit and row["kind"]=="chunk" and row["message_start_idx"] is not None:
+                match=db.execute("SELECT id FROM messages WHERE chat_id=? AND idx=?",(row["chat_id"],row["message_start_idx"])).fetchone()
+                row["matched_message_id"]=match[0] if match else None
         return result[:limit]
 
     def search(self,db,query,filters=None,mode="hybrid",limit=100,rerank=False):

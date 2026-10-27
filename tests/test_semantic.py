@@ -4,6 +4,8 @@ from pathlib import Path
 from lake.chunking import chunk_messages
 from lake.config import Config
 from lake.db import connect
+from lake.db import MIGRATIONS, migrate
+import sqlite3
 from lake.embeddings import EmbeddingQueue
 from lake.library import import_chats
 from lake.vector_index import NumpyMemmapIndex, create_vector_index
@@ -32,6 +34,12 @@ class ChunkerTests(unittest.TestCase):
         coded=chunk_messages([{"idx":4,"role":"assistant","content":code}],max_tokens=80,overlap_tokens=8)
         self.assertGreater(len(coded),1)
         self.assertTrue(all(c["text"].count("```")==2 for c in coded))
+    def test_migration_from_mvp_schema_reaches_current_embeddings_layout(self):
+        db=sqlite3.connect(":memory:");db.row_factory=sqlite3.Row
+        db.executescript(MIGRATIONS[0]);db.execute("PRAGMA user_version=1");migrate(db)
+        cols={r["name"] for r in db.execute("PRAGMA table_info(embeddings)")}
+        self.assertTrue({"message_start_idx","message_end_idx","kind","model_name","dim","content_hash","stale","text_content"}.issubset(cols))
+        self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0],3);db.close()
 
 class EmbeddingQueueTests(unittest.TestCase):
     def setUp(self): self.db=connect(":memory:")
@@ -48,6 +56,10 @@ class EmbeddingQueueTests(unittest.TestCase):
         self.assertEqual(self.db.execute("SELECT stale FROM embeddings").fetchone()[0],1)
         job=self.db.execute("SELECT model_name,status FROM embedding_jobs WHERE chat_id=?",(cid,)).fetchone()
         self.assertEqual((job["model_name"],job["status"]),("new-model","pending"))
+        digest=queue._source(self.db,cid)[2]
+        self.db.execute("INSERT INTO embedding_jobs(chat_id,model_name,content_hash,status,updated_at) VALUES(?,'old-model',?,'ready','now')",(cid,digest));self.db.commit()
+        back=EmbeddingQueue(self.db,self.config("old-model"),start_worker=False,schedule=False);back.enqueue_all()
+        self.assertEqual(self.db.execute("SELECT status FROM embedding_jobs WHERE chat_id=? AND model_name='old-model'",(cid,)).fetchone()[0],"pending")
     def test_failed_job_resumes_and_reuses_completed_chunk(self):
         cid=self.add_chat("start "+"details and observations "*180)
         calls=[]; failed=[False]

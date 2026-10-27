@@ -11,7 +11,7 @@ from .embeddings import encode_vector
 
 
 def vector_signature(db,model):
-    row=db.execute("SELECT COUNT(*) n,COALESCE(MAX(id),0) mx,COALESCE(SUM(id),0) sm,COALESCE(MAX(created_at),'') ts,COALESCE(SUM(id),0) ids FROM embeddings WHERE model_name=? AND stale=0",(model,)).fetchone()
+    row=db.execute("SELECT COUNT(*) n,COALESCE(MAX(id),0) mx,COALESCE(SUM(id),0) sm,COALESCE(MAX(created_at),'') ts FROM embeddings WHERE model_name=? AND stale=0",(model,)).fetchone()
     dims=[r[0] for r in db.execute("SELECT DISTINCT dim FROM embeddings WHERE model_name=? AND stale=0 ORDER BY dim",(model,))]
     return f"{row['n']}:{row['mx']}:{row['sm']}:{row['ts']}:{','.join(map(str,dims))}",dims
 
@@ -111,7 +111,7 @@ class NumpyMemmapIndex(VectorIndex):
         norm=float(np.linalg.norm(q))
         if not norm:return []
         scores=self.matrix @ (q/norm)
-        allowed=allowed_chat_ids(db,filters)
+        allowed=allowed_chat_ids(db,filters) if filters else None
         if filters:
             valid_codes=np.fromiter((self.code_by_chat[c] for c in allowed if c in self.code_by_chat),dtype=np.int32)
             if not len(valid_codes):return []
@@ -132,7 +132,6 @@ class SQLiteVecIndex(VectorIndex):
     def __init__(self,cache_path):self.fallback=NumpyMemmapIndex(cache_path);self.cache=Path(cache_path);self.cache.mkdir(parents=True,exist_ok=True)
     def invalidate(self):self.fallback.invalidate()
     def search(self,db,query_vector,model_name,filters=None,limit=200):
-        if filters:return self.fallback.search(db,query_vector,model_name,filters,limit)
         try:
             import sqlite_vec
             sqlite_vec.load(db)
@@ -150,9 +149,21 @@ class SQLiteVecIndex(VectorIndex):
                 db.execute("INSERT INTO vector_sync_state(model_name,dim,signature) VALUES(?,?,?) ON CONFLICT(model_name,dim) DO UPDATE SET signature=excluded.signature",(model_name,dim,signature));db.commit()
             qdim,qblob=encode_vector(query_vector)
             if qdim!=dim:raise ValueError("Query embedding dimensions do not match stored vectors")
-            k=max(100,int(limit)*30)
-            rows=db.execute(f"SELECT e.id,e.chat_id,e.kind,e.message_start_idx,e.message_end_idx,v.distance FROM {table} v JOIN embeddings e ON e.id=v.rowid WHERE v.embedding MATCH ? AND k=? AND v.model_name=? ORDER BY v.distance LIMIT ?",(qblob,k,model_name,limit)).fetchall()
-            return [{"embedding_id":r["id"],"chat_id":r["chat_id"],"kind":r["kind"],"message_start_idx":r["message_start_idx"],"message_end_idx":r["message_end_idx"],"score":1.0-r["distance"]} for r in rows]
+            total=db.execute("SELECT COUNT(*) FROM embeddings WHERE model_name=? AND stale=0",(model_name,)).fetchone()[0]
+            allowed=allowed_chat_ids(db,filters or {}) if filters else None
+            k=min(total,max(500,int(limit)*10));hits=[]
+            while k:
+                neighbors=db.execute(f"SELECT rowid,distance FROM {table} WHERE embedding MATCH ? AND k=? AND model_name=? ORDER BY distance",(qblob,k,model_name)).fetchall()
+                ids=[r["rowid"] for r in neighbors]
+                if not ids:break
+                marks=",".join("?" for _ in ids)
+                vectors=db.execute(f"SELECT id,chat_id,kind,message_start_idx,message_end_idx,text_content FROM embeddings WHERE model_name=? AND stale=0 AND id IN ({marks})",[model_name]+ids).fetchall()
+                distance_by_id={r["rowid"]:r["distance"] for r in neighbors}
+                hits=[{"embedding_id":r["id"],"chat_id":r["chat_id"],"kind":r["kind"],"message_start_idx":r["message_start_idx"],"message_end_idx":r["message_end_idx"],"text_content":r["text_content"],"score":1.0-distance_by_id[r["id"]]} for r in vectors if allowed is None or r["chat_id"] in allowed]
+                hits.sort(key=lambda x:x["score"],reverse=True)
+                if len(hits)>=limit or k>=total:break
+                k=min(total,k*2)
+            return hits[:limit]
         except Exception:
             # sqlite-vec is optional and platform-dependent; keep functionality
             # correct and local if loading the extension or its query fails.

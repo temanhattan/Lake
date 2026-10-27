@@ -56,7 +56,7 @@ class EmbeddingQueue:
     """SQLite-backed queue; jobs and vectors survive restarts and retries."""
     def __init__(self,db,config,embedder=None,start_worker=True,schedule=True):
         self.db=db; self.config=config; self.embedder=embedder or (lambda texts:ollama_embed(texts,config.embedding_model,config.ollama_url))
-        self.batch_size=16; self.wakeup=threading.Event(); self.stop_event=threading.Event()
+        self.batch_size=16; self.wakeup=threading.Event(); self.stop_event=threading.Event();self.db_lock=threading.RLock()
         self.index=None
         if schedule: self.enqueue_all()
         if start_worker: threading.Thread(target=self._worker,daemon=True,name="lake-embeddings").start()
@@ -70,28 +70,30 @@ class EmbeddingQueue:
         return messages,card_data,content_digest(messages,card_data)
 
     def enqueue_chat(self,chat_id):
-        model=self.config.embedding_model
-        messages,card,digest=self._source(self.db,chat_id)
-        old=self.db.execute("SELECT content_hash,status FROM embedding_jobs WHERE chat_id=? AND model_name=?",(chat_id,model)).fetchone()
-        if old and old["content_hash"]==digest and old["status"]=="ready": return False
-        self.db.execute("INSERT INTO embedding_jobs(chat_id,model_name,content_hash,status,error,updated_at) VALUES(?,?,?,'pending',NULL,?) "
-          "ON CONFLICT(chat_id,model_name) DO UPDATE SET content_hash=excluded.content_hash,status='pending',error=NULL,updated_at=excluded.updated_at",
-          (chat_id,model,digest,now()))
-        self.db.commit(); self.wakeup.set(); return True
+        with self.db_lock:
+            model=self.config.embedding_model
+            messages,card,digest=self._source(self.db,chat_id)
+            old=self.db.execute("SELECT content_hash,status FROM embedding_jobs WHERE chat_id=? AND model_name=?",(chat_id,model)).fetchone()
+            active=self.db.execute("SELECT COUNT(*) FROM embeddings WHERE chat_id=? AND model_name=? AND stale=0",(chat_id,model)).fetchone()[0]
+            if old and old["content_hash"]==digest and old["status"]=="ready" and active:return False
+            self.db.execute("INSERT INTO embedding_jobs(chat_id,model_name,content_hash,status,error,updated_at) VALUES(?,?,?,'pending',NULL,?) "
+              "ON CONFLICT(chat_id,model_name) DO UPDATE SET content_hash=excluded.content_hash,status='pending',error=NULL,updated_at=excluded.updated_at",
+              (chat_id,model,digest,now()))
+            self.db.commit(); self.wakeup.set(); return True
 
     def enqueue_all(self):
-        model=self.config.embedding_model
-        self.db.execute("UPDATE embeddings SET stale=1 WHERE model_name<>?",(model,)); self.db.commit()
-        self.db.execute("UPDATE embedding_jobs SET status='failed',error='Embedding model changed',updated_at=? WHERE model_name<>? AND status IN ('pending','running')",(now(),model)); self.db.commit()
-        for row in self.db.execute("SELECT id FROM chats ORDER BY id").fetchall(): self.enqueue_chat(row[0])
+        with self.db_lock:
+            model=self.config.embedding_model
+            self.db.execute("UPDATE embeddings SET stale=1 WHERE model_name<>?",(model,)); self.db.commit()
+            self.db.execute("UPDATE embedding_jobs SET status='failed',error='Embedding model changed',updated_at=? WHERE model_name<>? AND status IN ('pending','running')",(now(),model)); self.db.commit()
+            for row in self.db.execute("SELECT id FROM chats ORDER BY id").fetchall(): self.enqueue_chat(row[0])
 
     def progress(self):
-        model=self.config.embedding_model
-        row=self.db.execute("SELECT COUNT(*) total,SUM(status='failed') failed,SUM(status IN ('pending','running')) pending FROM embedding_jobs WHERE model_name=?",(model,)).fetchone()
-        # A job's ready status is authoritative; this separate count is also
-        # useful if a transcript changed while a progress request was in flight.
-        return {"model":model,"total":row["total"] or 0,"embedded":self.db.execute("SELECT COUNT(*) FROM embedding_jobs WHERE model_name=? AND status='ready'",(model,)).fetchone()[0],
-                "failed":row["failed"] or 0,"pending":row["pending"] or 0}
+        with self.db_lock:
+            model=self.config.embedding_model
+            row=self.db.execute("SELECT COUNT(*) total,SUM(status='failed') failed,SUM(status IN ('pending','running')) pending FROM embedding_jobs WHERE model_name=?",(model,)).fetchone()
+            return {"model":model,"total":row["total"] or 0,"embedded":self.db.execute("SELECT COUNT(*) FROM embedding_jobs WHERE model_name=? AND status='ready'",(model,)).fetchone()[0],
+                    "failed":row["failed"] or 0,"pending":row["pending"] or 0}
 
     def _worker(self):
         from .db import connect
@@ -143,8 +145,8 @@ class EmbeddingQueue:
             if len(vectors)!=len(batch): raise ValueError("Embedding provider returned the wrong number of vectors")
             for item,vector in zip(batch,vectors):
                 dim,blob=encode_vector(vector)
-                db.execute("INSERT INTO embeddings(chat_id,message_start_idx,message_end_idx,kind,model_name,dim,vector,content_hash,created_at,stale) VALUES(?,?,?,?,?,?,?,?,?,0) "
-                  "ON CONFLICT(chat_id,message_start_idx,message_end_idx,kind,model_name,content_hash) DO UPDATE SET dim=excluded.dim,vector=excluded.vector,created_at=excluded.created_at,stale=0",
-                  (chat_id,item["message_start_idx"],item["message_end_idx"],item["kind"],model,dim,blob,item["content_hash"],now()))
+                db.execute("INSERT INTO embeddings(chat_id,message_start_idx,message_end_idx,kind,model_name,dim,vector,content_hash,created_at,stale,text_content) VALUES(?,?,?,?,?,?,?,?,?,0,?) "
+                  "ON CONFLICT(chat_id,message_start_idx,message_end_idx,kind,model_name,content_hash) DO UPDATE SET dim=excluded.dim,vector=excluded.vector,created_at=excluded.created_at,stale=0,text_content=excluded.text_content",
+                  (chat_id,item["message_start_idx"],item["message_end_idx"],item["kind"],model,dim,blob,item["content_hash"],now(),item["text"]))
             db.commit()
         if self.index: self.index.invalidate()
