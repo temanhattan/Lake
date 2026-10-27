@@ -1,0 +1,9 @@
+[lake]
+host = "127.0.0.1"
+port = 8765
+db_path = "./data/lake.db"
+import_folder = "./imports"
+ollama_url = "http://127.0.0.1:11434"
+model = "qwen2.5:7b"
+context_target_tokens = 500
+secret_scan = true

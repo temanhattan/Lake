@@ -1,0 +1,4 @@
+User: How can I keep a transcript private?
+Assistant: Store it locally and bind the server to the loopback address.
+User: Does formatting survive?
+Assistant: Keep original message content unchanged.

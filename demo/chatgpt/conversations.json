@@ -1,0 +1,3 @@
+[
+  {"conversation_id":"demo-chatgpt-1","title":"Local Flask app","create_time":1720000000,"update_time":1720000300,"current_node":"answer","mapping":{"root":{"id":"root","parent":null,"message":{"author":{"role":"user"},"content":{"parts":["How do I bind Flask locally?"]}}},"answer":{"id":"answer","parent":"root","message":{"author":{"role":"assistant"},"content":{"parts":["Run with host=127.0.0.1."]}}},"dead":{"id":"dead","parent":"root","message":{"author":{"role":"assistant"},"content":{"parts":["An unselected branch."]}}}}}
+]
