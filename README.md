@@ -67,6 +67,16 @@ Lake stores chats, FTS indexes, embeddings, and durable embedding jobs in SQLite
 
 Use `python -m lake backup` for a database copy plus Markdown and JSON exports under `backups/`. Context blocks can be copied from a card or generated from the full transcript; the configured target is approximate because token estimation is local and heuristic.
 
+## Visual design
+
+The static frontend uses vanilla JavaScript ES modules and CSS; it adds no framework or build step. The visual tokens and responsive component styles live in `lake/static/style.css`. The UI uses a warm-paper light theme and an ink dark theme, with a restrained teal accent. The initial theme follows the operating-system preference; a user selection is saved locally. Reduced motion is available in the footer and the CSS also honors `prefers-reduced-motion`.
+
+DM Sans (UI), Fraunces (display), and a Noto Sans Arabic subset are served from `lake/static/fonts/`. These files are locally vendored WOFF2 assets with their SIL Open Font License texts in `lake/static/fonts/licenses/`. The font CSS selects Latin subsets for the UI/display fonts and Arabic glyphs for Arabic messages. No font CDN or other runtime asset host is used. No animation library is included.
+
+The primary page keeps the full search and filters visible. `Ctrl/Cmd+K` opens a separate action and quick-jump palette. The intro is shown for an empty library and can also be opened from `/welcome`; the component catalogue is at `/design-system`. Search result cards include source/model/date, a bounded marked excerpt, and the structured card summary when available. Search remains available when reduced motion is active. The palette backup action displays the existing local backup command (`python -m lake backup`); the frontend does not add a new backup endpoint.
+
+The original 3D gallery remains out of this phase. The inspiration study, captures, and any local recordings stay under `design-research/`, which is ignored by Git.
+
 ## Extension points
 
 Core operations live in the `lake/` library layer, separate from the HTTP/UI and MCP transport layers. The MCP interface is strictly read-only.

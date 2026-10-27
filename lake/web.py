@@ -24,9 +24,23 @@ class Handler(BaseHTTPRequestHandler):
     def _json(self, obj, status=200): self._send(status,json.dumps(obj,ensure_ascii=False,default=str),"application/json; charset=utf-8")
     def _body(self):
         n=int(self.headers.get("Content-Length",0)); return self.rfile.read(min(n,500_000_000))
+    def _attach_result_tags(self, rows):
+        """Attach assigned tags to visible search results in one read-only query."""
+        ids=[row.get("id",row.get("chat_id")) for row in rows]
+        ids=[chat_id for chat_id in ids if chat_id is not None]
+        by_chat={chat_id:[] for chat_id in ids}
+        if ids:
+            marks=",".join("?" for _ in ids)
+            for row in self.db.execute(
+                f"SELECT ct.chat_id,t.name FROM chat_tags ct JOIN tags t ON t.id=ct.tag_id WHERE ct.chat_id IN ({marks}) ORDER BY t.name",
+                ids):
+                by_chat[row["chat_id"]].append(row["name"])
+        for item in rows:
+            item["tags"]=by_chat.get(item.get("id",item.get("chat_id")),[])
+        return rows
     def do_GET(self):
         u=urllib.parse.urlsplit(self.path); path=u.path; q=urllib.parse.parse_qs(u.query)
-        if path=="/": return self._send(200,(STATIC/"index.html").read_bytes(),"text/html; charset=utf-8")
+        if path in {"/","/welcome","/design-system"}: return self._send(200,(STATIC/"index.html").read_bytes(),"text/html; charset=utf-8")
         if path.startswith("/static/"):
             f=STATIC/path.removeprefix("/static/")
             if not f.resolve().is_relative_to(STATIC.resolve()) or not f.is_file(): return self._send(404,b"")
@@ -39,12 +53,13 @@ class Handler(BaseHTTPRequestHandler):
             query=q.get("q",[""])[0]; mode=q.get("mode",["hybrid"])[0]
             if self.semantic:
                 result=self.semantic.search(self.db,query,filters,mode,100,q.get("rerank",["0"])[0]=="1")
+                result["results"]=self._attach_result_tags(result.get("results",[]))
                 result["sort"]=q.get("sort",["relevance"])[0]
                 if result["sort"] in ("newest","oldest"):
                     result["results"].sort(key=lambda r:r.get("created_at") or "",reverse=result["sort"]=="newest")
                 return self._json(result)
-            rows=search(self.db,query,filters,q.get("sort",["relevance"])[0],100)
-            return self._json({"results":[dict(r) for r in rows],"mode":"keyword","backend":None})
+            rows=[dict(r) for r in search(self.db,query,filters,q.get("sort",["relevance"])[0],100)]
+            return self._json({"results":self._attach_result_tags(rows),"mode":"keyword","backend":None})
         if path=="/api/duplicates":
             if not self.semantic:return self._json({"error":"Semantic search is not initialized"},503)
             try:threshold=float(q.get("threshold",[self.config.duplicate_similarity_threshold])[0])
