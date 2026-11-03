@@ -1,0 +1,2 @@
+# Development-only browser verification dependency. Not imported by the app.
+playwright>=1.50,<2

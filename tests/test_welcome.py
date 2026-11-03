@@ -70,6 +70,16 @@ class WelcomeEndpointTests(unittest.TestCase):
         self.assertNotIn("archived", ids)
         self.assertNotIn("secret", ids)
 
+    def test_unscanned_chat_with_fake_key_is_scanned_before_wall_eligibility(self):
+        for i in range(6):
+            self.add_chat(f"safe-{i}", f"Safe fictional chat {i}")
+        self.add_chat("never-scanned", "Unscanned fake key chat",
+                      content="api_key=FAKEKEY0123456789ABCDEFGHIJK")
+        response = self.get_tiles()
+        ids = {tile["id"] for tile in response}
+        self.assertNotIn("never-scanned", ids)
+        self.assertEqual(ids, {f"safe-{i}" for i in range(6)})
+
     def test_response_is_capped_and_pins_precede_recent_and_diversified_items(self):
         for i in range(30):
             self.add_chat(f"chat-{i:02}", f"Chat {i:02}", pinned=int(i in (2, 5)), project=f"Project {i % 5}", tag=f"Tag {i % 7}")

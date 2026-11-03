@@ -1,10 +1,10 @@
 import unittest
 import tempfile
+import shutil
 from pathlib import Path
 from lake.chunking import chunk_messages
 from lake.config import Config
-from lake.db import connect
-from lake.db import MIGRATIONS, migrate
+from lake.db import connect, MIGRATIONS, SCHEMA_VERSION, migrate
 import sqlite3
 from lake.embeddings import EmbeddingQueue
 from lake.library import import_chats
@@ -39,7 +39,29 @@ class ChunkerTests(unittest.TestCase):
         db.executescript(MIGRATIONS[0]);db.execute("PRAGMA user_version=1");migrate(db)
         cols={r["name"] for r in db.execute("PRAGMA table_info(embeddings)")}
         self.assertTrue({"message_start_idx","message_end_idx","kind","model_name","dim","content_hash","stale","text_content"}.issubset(cols))
-        self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0],3);db.close()
+        self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0],SCHEMA_VERSION);db.close()
+    def test_populated_database_copy_is_backed_up_before_migration(self):
+        with tempfile.TemporaryDirectory() as folder:
+            source=Path(folder)/"source.db"
+            db=sqlite3.connect(source);db.row_factory=sqlite3.Row
+            db.executescript(MIGRATIONS[0]);db.execute("PRAGMA user_version=1")
+            db.execute("INSERT INTO chats(id,source,title,imported_at,content_hash) VALUES('fixture','manual','Fictional migration fixture','now','hash')")
+            db.execute("INSERT INTO messages(chat_id,idx,role,content) VALUES('fixture',0,'user','fictional fixture content')")
+            db.commit();db.close()
+
+            copied=Path(folder)/"lake-copy.db";shutil.copy2(source,copied)
+            migrated=connect(copied)
+            self.assertEqual(migrated.execute("PRAGMA user_version").fetchone()[0],SCHEMA_VERSION)
+            self.assertEqual(migrated.execute("SELECT title FROM chats WHERE id='fixture'").fetchone()[0],"Fictional migration fixture")
+            migrated.close()
+
+            backup_path=Path(str(copied)+".pre-migration-v1.bak")
+            self.assertTrue(backup_path.is_file())
+            backup=sqlite3.connect(backup_path)
+            self.assertEqual(backup.execute("PRAGMA user_version").fetchone()[0],1)
+            self.assertEqual(backup.execute("SELECT title FROM chats WHERE id='fixture'").fetchone()[0],"Fictional migration fixture")
+            self.assertEqual(backup.execute("SELECT content FROM messages WHERE chat_id='fixture'").fetchone()[0],"fictional fixture content")
+            backup.close()
 
 class EmbeddingQueueTests(unittest.TestCase):
     def setUp(self): self.db=connect(":memory:")

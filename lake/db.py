@@ -75,14 +75,34 @@ CREATE TABLE solution_feedback (chat_id TEXT PRIMARY KEY REFERENCES chats(id) ON
 
 
 def connect(path):
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
-    db = sqlite3.connect(path, check_same_thread=False)
+    db_path = str(path)
+    if db_path != ":memory:":
+        Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+    db = sqlite3.connect(db_path, check_same_thread=False)
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA foreign_keys=ON")
     db.execute("PRAGMA journal_mode=WAL")
     db.execute("PRAGMA busy_timeout=5000")
+    version = db.execute("PRAGMA user_version").fetchone()[0]
+    if db_path != ":memory:" and 0 < version < SCHEMA_VERSION:
+        _backup_before_migration(db, Path(db_path), version)
     migrate(db)
     return db
+
+
+def _backup_before_migration(db, db_path, version):
+    """Create a consistent SQLite backup before changing an existing schema."""
+    base = db_path.with_name(f"{db_path.name}.pre-migration-v{version}.bak")
+    target = base
+    suffix = 1
+    while target.exists():
+        target = base.with_name(f"{base.name}.{suffix}")
+        suffix += 1
+    backup = sqlite3.connect(str(target))
+    try:
+        db.backup(backup)
+    finally:
+        backup.close()
 
 
 def connect_readonly(path):

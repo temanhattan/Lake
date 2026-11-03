@@ -79,6 +79,8 @@ Lake stores chats, FTS indexes, embeddings, and durable embedding jobs in SQLite
 
 Use `python -m lake backup` for a database copy plus Markdown and JSON exports under `backups/`. Context blocks can be copied from a card or generated from the full transcript; the configured target is approximate because token estimation is local and heuristic.
 
+When opening an existing database with an older schema, Lake creates a consistent SQLite backup beside it (for example, `lake.db.pre-migration-v3.bak`) before applying migrations. Existing backups are preserved; a numbered suffix is used if that path already exists.
+
 ## Visual design
 
 The static frontend uses vanilla JavaScript ES modules and CSS; it adds no framework or build step. The visual tokens and responsive component styles live in `lake/static/style.css`. The UI uses a warm-paper light theme and an ink dark theme, with a restrained teal accent. The initial theme follows the operating-system preference; a user selection is saved locally. Reduced motion is available in the footer and the CSS also honors `prefers-reduced-motion`.
