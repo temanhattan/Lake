@@ -5,6 +5,12 @@ const START_KEY = 'lake-welcome-started';
 const SEEN_KEY = 'lake-welcome-seen';
 const SUMMARY_SHORT = 96;
 const ROTATE_MS = 7200;
+const TILE_HUES = ['#145e59', '#285c91', '#60498a', '#87482e', '#576128', '#8b3c58'];
+// First-tag buckets map to teal, blue, violet, rust, olive, and berry;
+// unmapped tags use a stable project:tag hash into the same six-color palette.
+const TAG_HUES = { design: 0, maps: 0, ux: 0, debugging: 1, accessibility: 1, web: 1, css: 1,
+  sql: 2, architecture: 2, sqlite: 2, privacy: 2, python: 3, jobs: 3, imports: 3, reliability: 3,
+  search: 4, embeddings: 4, performance: 4, mobile: 5, storage: 5, retrieval: 5 };
 const L_PATH = 'M240 281 C224 280 216 296 215 323 C214 354 214 379 222 392 C232 430 221 480 221 519 M222 392 C204 399 181 406 158 409 M221 519 C219 540 204 561 188 562 C172 562 164 549 168 534 C172 517 188 514 200 520 C215 526 220 542 235 551';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -16,13 +22,18 @@ const isTypingTarget = target => target instanceof HTMLElement &&
 
 function lakeLogo() {
   // One logo component; replace this SVG body when the handwritten wordmark is ready.
-  return `<span class="welcome-logo" id="welcome-logo" aria-label="Lake"><svg class="brand-mark" viewBox="145 270 150 310" aria-hidden="true"><path d="${L_PATH}"/></svg></span>`;
+  return `<span class="welcome-logo" id="welcome-logo" role="img" aria-label="Lake"><svg class="welcome-logo-mark" viewBox="145 270 150 310" aria-hidden="true"><path d="${L_PATH}"/></svg></span>`;
 }
 
 function hashHue(value) {
   let hash = 2166136261;
   for (const char of value || 'Lake') hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
-  return (hash >>> 0) % 360;
+  return (hash >>> 0) % TILE_HUES.length;
+}
+
+function hueForTile(tile, tags) {
+  const key = String(tags[0] || tile.project || 'Lake').toLowerCase();
+  return Object.hasOwn(TAG_HUES, key) ? TAG_HUES[key] : hashHue(`${tile.project || ''}:${key}`);
 }
 
 function cardMarkup(tile, featured, index) {
@@ -30,13 +41,14 @@ function cardMarkup(tile, featured, index) {
   const summary = oneLine(tile.summary);
   const shortSummary = summary.length > SUMMARY_SHORT ? `${summary.slice(0, SUMMARY_SHORT).trimEnd()}…` : summary;
   const tags = Array.isArray(tile.tags) ? tile.tags.slice(0, 3) : [];
-  const accentKey = tile.project || tags[0] || 'Lake';
+  const hue = hueForTile(tile, tags);
   const date = tile.date ? new Date(tile.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '';
   const label = `Open chat: ${oneLine(tile.title)}. ${summary}`;
   // Keep this deterministic 1×1 / 2×1 / 1×2 cycle in sync with welcome.css and README.md.
   const sizePattern = ['square', 'wide', 'tall', 'square', 'wide', 'square', 'tall', 'square'];
   const size = featured ? 'featured' : sizePattern[index % sizePattern.length];
-  return `<button class="welcome-card welcome-card--${size}${featured ? ' is-featured' : ''}" type="button" data-chat-id="${esc(tile.id)}" aria-label="${esc(label)}" style="--tile-hue:${hashHue(accentKey)};--reveal-index:${Math.min(index, 18)}">
+  const solidAccent = !featured && index % 6 === 3;
+  return `<button class="welcome-card welcome-card--${size}${featured ? ' is-featured' : ''}${solidAccent ? ' welcome-card--solid-accent' : ''}" type="button" data-chat-id="${esc(tile.id)}" data-hue="${hue}" aria-label="${esc(label)}" style="--tile-tone:${TILE_HUES[hue]};--reveal-index:${Math.min(index, 18)}">
     <span class="welcome-card__accent" aria-hidden="true"></span>
     <span class="welcome-card__head"><span class="welcome-card__project">${esc(tile.project || 'Lake library')}</span>${tile.model ? `<span class="welcome-card__model">${esc(tile.model)}</span>` : ''}</span>
     <span class="welcome-card__title">${title}</span>
@@ -58,6 +70,13 @@ function loadWelcomeStyle() {
 
 export async function startWelcome() {
   void loadWelcomeStyle();
+  // Fetch and parse the local app module ahead of Start without evaluating it;
+  // its search and filter requests wait until the user enters the library.
+  if (!document.querySelector('link[data-welcome-preload="app"]')) {
+    const preload = document.createElement('link');
+    preload.rel = 'modulepreload'; preload.href = '/static/app.js'; preload.dataset.welcomePreload = 'app';
+    document.head.append(preload);
+  }
   const view = document.querySelector('#welcome-view');
   if (!view) return;
   document.body.classList.add('lake-welcome-active');
@@ -84,19 +103,19 @@ export async function startWelcome() {
 
   view.innerHTML = `<div class="welcome-page${introPlayed ? ' is-ready' : ' is-intro'}">
     <section class="welcome-intro" aria-labelledby="welcome-title">
-      <div class="welcome-brand-row">${lakeLogo()}<span class="welcome-brand-name">Lake</span><span class="eyebrow">YOUR LOCAL CHAT GALLERY</span></div>
-      <div class="welcome-copy"><h1 id="welcome-title">Good work,<br><em>kept close.</em></h1><p>Find the fixes and decisions you have already figured out. Your conversations stay on this device.</p></div>
-      <div class="welcome-startbar"><button class="primary welcome-start" id="welcome-start" type="button">Start <span aria-hidden="true">→</span></button></div>
+      <div class="welcome-brand-row">${lakeLogo()}<span class="real-chat-indicator" id="real-chat-indicator" hidden>Real chats visible</span><span class="eyebrow">YOUR LOCAL CHAT GALLERY</span></div>
+      <div class="welcome-copy"><h1 id="welcome-title">Good work,<br><em>kept close.</em></h1><p>Find the fixes and decisions you have already figured out. Your conversations stay on this device.</p><div class="welcome-startbar"><button class="primary welcome-start" id="welcome-start" type="button">Start <span aria-hidden="true">→</span></button><a class="welcome-skip" href="/">Skip</a></div></div>
+    </section>
+    <section class="welcome-controls" aria-label="Welcome preferences">
+      <div class="welcome-demo-row"><label class="welcome-toggle"><input id="welcome-demo-toggle" type="checkbox"><span class="toggle-switch" aria-hidden="true"></span><span>Demo mode</span></label><span class="demo-shortcut">Press D to toggle</span></div>
+      <details class="welcome-extra-settings" id="welcome-extra-settings" open><summary>More settings</summary><div class="welcome-extra-settings-panel">
+        <label class="welcome-toggle welcome-launch-toggle"><input id="welcome-launch-toggle" type="checkbox"><span class="toggle-switch" aria-hidden="true"></span><span>Welcome on launch</span></label>
+        <div class="welcome-display-controls"><button class="quiet-link welcome-theme-toggle" id="welcome-theme-toggle" type="button">Theme: <span id="welcome-theme-label"></span></button><button class="quiet-link welcome-motion-toggle" id="welcome-motion-toggle" type="button">Motion: <span id="welcome-motion-label"></span></button></div>
+      </div></details>
     </section>
     <section class="welcome-wall-wrap" aria-label="A selection of your chats">
       <div class="welcome-wall-status" id="welcome-wall-status" role="status" aria-live="polite"></div>
       <div class="welcome-wall" id="welcome-wall" role="group" aria-label="Chat gallery"></div>
-    </section>
-    <section class="welcome-controls" aria-label="Welcome preferences">
-      <div class="welcome-demo-row"><label class="welcome-toggle"><input id="welcome-demo-toggle" type="checkbox"><span class="toggle-switch" aria-hidden="true"></span><span>Demo mode</span></label><span class="demo-shortcut">Press D to toggle</span><span class="real-chat-indicator" id="real-chat-indicator" hidden>Real chats visible</span></div>
-      <label class="welcome-toggle welcome-launch-toggle"><input id="welcome-launch-toggle" type="checkbox"><span class="toggle-switch" aria-hidden="true"></span><span>Show welcome on launch</span></label>
-      <div class="welcome-display-controls"><button class="quiet-link welcome-theme-toggle" id="welcome-theme-toggle" type="button">Theme: <span id="welcome-theme-label"></span></button><button class="quiet-link welcome-motion-toggle" id="welcome-motion-toggle" type="button">Motion: <span id="welcome-motion-label"></span></button></div>
-      <a class="welcome-skip" href="/">Skip to your library</a>
     </section>
     <div class="welcome-import" id="welcome-import" hidden><p>Looking for a first look?</p><a class="secondary" id="welcome-import-link" href="/?import=1">Import your first export</a></div>
   </div>`;
@@ -109,6 +128,7 @@ export async function startWelcome() {
   const launchToggle = view.querySelector('#welcome-launch-toggle');
   const themeButton = view.querySelector('#welcome-theme-toggle');
   const motionButton = view.querySelector('#welcome-motion-toggle');
+  if (window.matchMedia('(max-width:680px)').matches) view.querySelector('#welcome-extra-settings').open = false;
 const reduced = () => preference.matches || localStorage.getItem('lake-motion') === 'reduced';
   document.documentElement.dataset.motion = reduced() ? 'reduced' : 'full';
 

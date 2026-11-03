@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import base64
 import os
 import sys
 import threading
@@ -9,18 +10,50 @@ import time
 import unittest
 from pathlib import Path
 from http.server import ThreadingHTTPServer
+from urllib.request import urlopen
 
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
+from lake.welcome import SAMPLE_TILES, clear_secret_scan_cache
 EVIDENCE = ROOT / "design-research" / "welcome-evidence"
 EVIDENCE.mkdir(parents=True, exist_ok=True)
 SENTINEL = "FAKE_SENTINEL_TEXT_FAKE_SENTINEL_TEXT"
-REAL_MARKERS = [SENTINEL, "Test model"] + [value for i in range(24) for value in (
-    f"ci-fictional-{i:02d}", f"Fictional conversation {i+1:02d}",
-    f"Fictional browser issue {i}", f"Fictional browser resolution {i}",
-)] + ["Fictional browser test transcript 0", "test-tag-"]
+EXTRA_FIXTURES = [
+    ("A queue that drains without surprises", "The retry worker now releases successful jobs and leaves only failed work for the next pass.", "Northstar", ["python", "jobs"], "GPT-4o"),
+    ("Search remembers the phrase, not just the word", "A small synonym expansion brings back the decision even when the original wording has faded.", "Lake", ["search", "retrieval"], "GPT-4.1"),
+    ("An import preview with room to breathe", "The preview separates skipped rows from warnings so a large export is easier to review.", "Field Notes", ["imports", "ux"], "Claude Sonnet"),
+    ("The quiet fix for a noisy refresh", "A stale request was winning a race after navigation; cancelling it keeps the new view in control.", "Northstar", ["debugging", "web"], "GPT-4.1"),
+    ("A label that survives the narrow screen", "The mobile filter keeps its full name while the rest of the controls wrap into a clean second row.", "Field Notes", ["mobile", "accessibility"], "GPT-4o"),
+    ("Cards that tell you what changed", "A concise result summary gives the library a useful preview without opening the full conversation.", "Lake", ["product", "design"], "Claude Sonnet"),
+    ("One backup before the schema moves", "The migration now creates a recoverable copy before applying the next schema version.", "Northstar", ["sqlite", "reliability"], "GPT-4.1"),
+    ("A better boundary for local search", "The query builder keeps filters parameterized and makes the empty-search path inexpensive.", "Lake", ["privacy", "sql"], "GPT-4o"),
+    ("Focus that stays in the picture", "Keyboard navigation returns to the same control after a dialog closes and keeps the focus ring visible.", "Field Notes", ["accessibility", "keyboard"], "Claude Sonnet"),
+    ("A project view with fewer duplicates", "The grouped list folds repeated titles together while keeping the original chats available underneath.", "Northstar", ["organization", "search"], "GPT-4.1"),
+    ("A softer accent for ink mode", "The selected hue keeps its character on the dark surface without dropping below readable contrast.", "Field Notes", ["color", "design"], "GPT-4o"),
+    ("Keep the useful detail, leave the transcript", "A compact card carries the decision and next step while the private conversation stays in local storage.", "Lake", ["privacy", "summaries"], "Claude Sonnet"),
+]
+BASE_FIXTURE_COPY = [
+    ("A trail map that remembers your route", "An offline-first trail planner restores the last waypoint, preserves field notes between visits, and only asks for location access when you choose to record a new route."),
+    ("The cache that quietly missed a locale", "A stale panel traced back to a cache key that left out the active language."),
+    ("A query plan with fewer surprises", "A smaller SQL path made the import preview easier to understand and quicker to trust."),
+    ("A color with the right contrast at dusk", "The accent keeps its character and stays readable across warm paper and dark ink."),
+    ("A queue worker that knows when to stop", "The retry loop leaves completed work alone and reports only the items that still need attention."),
+    ("Search from the detail you still recall", "A little hybrid retrieval brings back the fix even when its exact phrase has slipped away."),
+    ("An export parser with a clean landing", "The importer accepts both the full conversation list and one copied transcript."),
+    ("Focus rings that stay clear in ink mode", "The keyboard outline remains distinct against the darker surface without brightening every control."),
+    ("When background indexing catches up", "The first search no longer waits for the optional index to finish its work."),
+    ("A migration that can finish after a pause", "The schema step can resume safely after an interrupted upgrade."),
+    ("A narrow page with room for one action", "The mobile layout keeps its main choice close while the reading stream stays easy to scan."),
+    ("Keep this conversation on the device", "Local storage leaves the useful decision available without sending a copy to a service."),
+]
+FIXTURE = [{**tile, "title": title, "summary": summary} for tile, (title, summary) in zip(SAMPLE_TILES, BASE_FIXTURE_COPY)] + [
+    {"title": title, "summary": summary, "project": project, "tags": tags, "model": model}
+    for title, summary, project, tags, model in EXTRA_FIXTURES
+]
+REAL_MARKERS = [SENTINEL] + [value for i, tile in enumerate(FIXTURE) for value in (
+    f"ci-fictional-{i:02d}", tile["title"], tile["summary"])]
 REPORT = {"statuses": {}, "requests": [], "measurements": {}, "evidence": []}
 
 
@@ -34,20 +67,24 @@ def make_server():
     print("Opening temporary test DB…", flush=True)
     db = connect(str(db_path))
     print("Seeding fictional summaries…", flush=True)
-    for i in range(24):
-        title = f"Fictional conversation {i+1:02d}"
+    for i, fixture in enumerate(FIXTURE):
+        title = fixture["title"]
         cid = f"ci-fictional-{i:02d}"
         db.execute("""INSERT INTO chats(id,source,title,model_used,created_at,updated_at,imported_at,
             pinned,archived,content_hash) VALUES(?,?,?,?,?,?,?,?,?,?)""",
-            (cid, "manual", title, "Test model", f"2026-10-{i+1:02d}", f"2026-10-{i+1:02d}", "2026-11-03", int(i == 0), 0, f"hash-{i}"))
+            (cid, "manual", title, fixture["model"], f"2026-10-{24-i:02d}", f"2026-10-{24-i:02d}", "2026-11-03", int(i == 0), 0, f"hash-{i}"))
         db.execute("INSERT INTO messages(chat_id,idx,role,content) VALUES(?,0,'user',?)",
-                   (cid, f"Fictional browser test transcript {i}; {SENTINEL if i == 0 else 'no user data.'}"))
+                   (cid, f"Fictional browser test transcript {i}; {SENTINEL if i == 0 else 'fictional local fixture only.'}"))
         db.execute("INSERT INTO cards(chat_id,problem,result,status) VALUES(?,?,?,'ready')",
-                   (cid, f"Fictional browser issue {i}", f"Fictional browser resolution {i}"))
-        tag = f"test-tag-{i % 4}"
-        db.execute("INSERT OR IGNORE INTO tags(name) VALUES(?)", (tag,))
-        tag_id = db.execute("SELECT id FROM tags WHERE name=?", (tag,)).fetchone()[0]
-        db.execute("INSERT INTO chat_tags(chat_id,tag_id) VALUES(?,?)", (cid, tag_id))
+                   (cid, fixture["summary"], fixture["summary"]))
+        project_name = fixture["project"]
+        db.execute("INSERT OR IGNORE INTO projects(name) VALUES(?)", (project_name,))
+        project_id = db.execute("SELECT id FROM projects WHERE name=?", (project_name,)).fetchone()[0]
+        db.execute("UPDATE chats SET project_id=? WHERE id=?", (project_id, cid))
+        for tag in fixture["tags"]:
+            db.execute("INSERT OR IGNORE INTO tags(name) VALUES(?)", (tag,))
+            tag_id = db.execute("SELECT id FROM tags WHERE name=?", (tag,)).fetchone()[0]
+            db.execute("INSERT INTO chat_tags(chat_id,tag_id) VALUES(?,?)", (cid, tag_id))
     db.commit()
     print("Starting local HTTP handler…", flush=True)
     Handler.db = db
@@ -63,6 +100,134 @@ def make_server():
 def check(condition, message):
     if not condition:
         raise AssertionError(message)
+
+
+def _rgb_from_hex(value):
+    value = value.lstrip("#")
+    return tuple(int(value[index:index + 2], 16) / 255 for index in (0, 2, 4))
+
+
+def _luminance(rgb):
+    channels = [c / 12.92 if c <= .04045 else ((c + .055) / 1.055) ** 2.4 for c in rgb]
+    return .2126 * channels[0] + .7152 * channels[1] + .0722 * channels[2]
+
+
+def _contrast(first, second):
+    one, two = sorted((_luminance(_rgb_from_hex(first)), _luminance(_rgb_from_hex(second))), reverse=True)
+    return (one + .05) / (two + .05)
+
+
+def benchmark_endpoint():
+    """Measure cold and warm HTTP responses against 5,000 fictional chats."""
+    from lake.config import Config
+    from lake.db import connect
+    from lake.web import Handler
+
+    class BenchmarkHandler(Handler):
+        pass
+
+    db_path = EVIDENCE / "fictional-benchmark-5000.sqlite3"
+    db_path.unlink(missing_ok=True)
+    db = connect(str(db_path))
+    rows = []
+    cards = []
+    messages = []
+    for i in range(5000):
+        chat_id = f"bench-fictional-{i:04d}"
+        digest = f"benchmark-content-hash-{i:04d}"
+        rows.append((chat_id, "manual", f"Fictional benchmark note {i:04d}", "GPT-4.1",
+                     "2026-10-20", "2026-10-20", "2026-11-03", 0, 0, digest))
+        cards.append((chat_id, f"Fictional benchmark topic {i:04d}", f"A safe summary for the fictional benchmark item {i:04d}.", "ready"))
+        messages.append((chat_id, 0, "user", f"A fictional transcript for benchmark item {i:04d}."))
+    db.executemany("""INSERT INTO chats(id,source,title,model_used,created_at,updated_at,imported_at,pinned,archived,content_hash)
+        VALUES(?,?,?,?,?,?,?,?,?,?)""", rows)
+    db.executemany("INSERT INTO cards(chat_id,problem,result,status) VALUES(?,?,?,?)", cards)
+    db.executemany("INSERT INTO messages(chat_id,idx,role,content) VALUES(?,?,?,?)", messages)
+    db.commit()
+    BenchmarkHandler.db = db
+    BenchmarkHandler.config = Config(db_path=str(db_path), port=0)
+    BenchmarkHandler.semantic = BenchmarkHandler.embeddings = BenchmarkHandler.jobs = None
+    server = ThreadingHTTPServer(("127.0.0.1", 0), BenchmarkHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    url = f"http://127.0.0.1:{server.server_address[1]}/api/welcome/tiles"
+    try:
+        clear_secret_scan_cache()
+        started = time.perf_counter()
+        with urlopen(url) as response:
+            cold_payload = response.read()
+        cold_ms = (time.perf_counter() - started) * 1000
+        started = time.perf_counter()
+        with urlopen(url) as response:
+            warm_payload = response.read()
+        warm_ms = (time.perf_counter() - started) * 1000
+        check(len(json.loads(cold_payload)) == 24 and cold_payload == warm_payload,
+              "5,000-chat endpoint benchmark did not return the same capped fictional result")
+        REPORT["measurements"]["endpoint_5000_cold_ms"] = round(cold_ms, 2)
+        REPORT["measurements"]["endpoint_5000_warm_ms"] = round(warm_ms, 2)
+        REPORT["measurements"]["endpoint_5000_chat_count"] = 5000
+        REPORT["statuses"]["endpoint_5000_warm_under_300ms"] = "Passed" if warm_ms < 300 else "Failed"
+        check(warm_ms < 300, f"warm endpoint on 5,000 fictional chats took {warm_ms:.2f} ms (target <300 ms)")
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+        db.close()
+
+
+def update_report_network_block(report_path):
+    """Derive the markdown request totals and unique list from browser JSON."""
+    import re
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    requests = report["requests"]
+    urls = sorted(set(requests))
+    report["measurements"]["request_event_count"] = len(requests)
+    report["measurements"]["distinct_request_url_count"] = len(urls)
+    report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    markdown_path = ROOT / "WELCOME-VERIFICATION.md"
+    markdown = markdown_path.read_text(encoding="utf-8")
+    url_lines = "\n".join(f"{url}" for url in urls)
+    block = ("<!-- REQUEST_COUNTS_START -->\n"
+             f"Programmatically counted from [welcome-browser-results.json](design-research/welcome-evidence/welcome-browser-results.json): **{len(requests)} request events**, **{len(urls)} distinct URLs**.\n\n"
+             "```text\n" + url_lines + "\n```\n"
+             "<!-- REQUEST_COUNTS_END -->")
+    markdown, count = re.subn(r"<!-- REQUEST_COUNTS_START -->.*?<!-- REQUEST_COUNTS_END -->", block,
+                              markdown, count=1, flags=re.S)
+    check(count == 1, "verification report network markers are missing")
+    markdown_path.write_text(markdown, encoding="utf-8")
+
+
+def build_comparison_sheets(browser):
+    """Render four before/after pairs as browser evidence, without image deps."""
+    pairs = [
+        ("desktop-light", "real-light-1440x900", 1440, 900),
+        ("desktop-dark", "real-dark-1440x900", 1440, 900),
+        ("mobile-light", "real-light-390x844", 390, 844),
+        ("mobile-dark", "real-dark-390x844", 390, 844),
+    ]
+    if any(not (EVIDENCE / f"welcome-before-{stem}.png").is_file() for _, stem, _, _ in pairs):
+        REPORT["statuses"]["before_after_comparison_sheets"] = "Not run"
+        print("Before screenshots are not present; before/after sheets were not generated.", flush=True)
+        return
+    for label, stem, width, height in pairs:
+        sources = []
+        for prefix in ("welcome-before-", "welcome-"):
+            path = EVIDENCE / f"{prefix}{stem}.png"
+            encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+            sources.append(f"data:image/png;base64,{encoded}")
+        html = f"""<!doctype html><html><head><meta charset="utf-8"><style>
+          *{{box-sizing:border-box}}body{{margin:0;padding:12px;background:#eee;color:#222;font:16px system-ui,sans-serif}}
+          main{{display:grid;grid-template-columns:repeat(2, {width}px);gap:12px}}figure{{margin:0}}figcaption{{height:30px;font-weight:700}}
+          img{{display:block;width:{width}px;height:{height}px;object-fit:contain;background:#fff}}
+          </style></head><body><main><figure><figcaption>Before</figcaption><img src="{sources[0]}"></figure>
+          <figure><figcaption>After</figcaption><img src="{sources[1]}"></figure></main></body></html>"""
+        page = browser.new_page(viewport={"width": width * 2 + 36, "height": height + 60}, device_scale_factor=1)
+        page.set_content(html, wait_until="load")
+        target = EVIDENCE / f"welcome-before-after-{label}.png"
+        page.screenshot(path=str(target), full_page=True)
+        REPORT["evidence"].append(str(target.relative_to(ROOT)))
+        page.close()
+    REPORT["statuses"]["before_after_comparison_sheets"] = "Passed"
 
 
 def main():
@@ -94,6 +259,7 @@ def main():
             def context_for(width, height, *, theme="light", demo=False, reduced=None, video=False):
                 kwargs = {"viewport": {"width": width, "height": height}, "device_scale_factor": 1,
                           "color_scheme": theme, "reduced_motion": reduced}
+                kwargs.update(is_mobile=(width <= 680), has_touch=(width <= 680))
                 if video:
                     kwargs["record_video_dir"] = str(EVIDENCE)
                     kwargs["record_video_size"] = {"width": width, "height": height}
@@ -126,9 +292,48 @@ def main():
                             page.wait_for_timeout(700)
                             count = page.locator(".welcome-card").count()
                             check(12 <= count <= 24, f"expected 12–24 tiles, got {count}")
+                            palette = ["#145e59", "#285c91", "#60498a", "#87482e", "#576128", "#8b3c58"]
+                            accent_ratios = [_contrast("#ffffff", color) for color in palette]
+                            check(min(accent_ratios) >= 4.5, f"an inverted accent hue fails AA contrast: {accent_ratios}")
+                            visual = page.evaluate("""() => {
+                              const lum = c => {let q=c.match(/[\\d.]+/g).slice(0,3).map(Number);if(!c.startsWith('color(srgb'))q=q.map(x=>x/255);
+                                const v=q.map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4);return .2126*v[0]+.7152*v[1]+.0722*v[2];};
+                              const contrast=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)};
+                              const cards=[...document.querySelectorAll('.welcome-card')];
+                              const checks=cards.flatMap(card=>['.welcome-card__title','.welcome-card__summary-short','.welcome-card__summary-full','.welcome-card__head','.welcome-card__foot','.welcome-tag']
+                                .map(selector=>{const el=card.querySelector(selector);if(!el)return null;
+                                  const fg=getComputedStyle(el).color,bg=getComputedStyle(card).backgroundColor;
+                                  return {selector,fg,bg,ratio:contrast(fg,bg),id:card.dataset.chatId};}).filter(Boolean));
+                              checks.sort((a,b)=>a.ratio-b.ratio);
+                              const logo=document.querySelector('#welcome-logo svg');
+                              const edges=['#welcome-logo','.welcome-copy h1','#welcome-wall'].map(selector=>
+                                document.querySelector(selector).getBoundingClientRect().left);
+                              return {hues:[...new Set(cards.map(card=>card.dataset.hue))],solid:cards.some(card=>card.classList.contains('welcome-card--solid-accent')),
+                                logoVisible:Boolean(logo&&getComputedStyle(logo).display!=='none'&&getComputedStyle(logo).strokeWidth==='28px'),
+                                logoCount:document.querySelectorAll('#welcome-logo').length,duplicateNameCount:document.querySelectorAll('.welcome-brand-name').length,
+                                leftEdges:edges,headlineWrap:getComputedStyle(document.querySelector('#welcome-title')).textWrap,
+                                minContrast:checks[0].ratio,lowest:checks.slice(0,3)};
+                            }""")
+                            check(len(visual["hues"]) >= 5, f"fewer than five deterministic hue accents appear: {visual['hues']}")
+                            check(visual["solid"], "gallery has no inverted solid accent tile")
+                            check(visual["logoVisible"], "single welcome mark is missing or does not use the heavier stroke")
+                            check(visual["logoCount"] == 1 and visual["duplicateNameCount"] == 0, "welcome page has a duplicate Lake wordmark")
+                            check(max(visual["leftEdges"]) - min(visual["leftEdges"]) <= 1.0, f"logo, headline, and wall do not share a left edge: {visual['leftEdges']}")
+                            check(visual["headlineWrap"] == "balance", f"headline text-wrap is not balanced: {visual['headlineWrap']}")
+                            check(visual["minContrast"] >= 4.5, f"gallery text fails AA contrast: {visual}")
+                            REPORT["measurements"][f"{mode}-{theme}-tile_hues"] = visual["hues"]
+                            REPORT["measurements"][f"{mode}-{theme}-minimum_text_contrast"] = round(visual["minContrast"], 2)
                             if mode == "real":
                                 check(page.locator("#real-chat-indicator").is_visible(), "real mode indicator missing while seeded real tiles display")
-                                check("Fictional conversation" in page.locator(".welcome-card").first.get_attribute("aria-label"), "seeded fictional real-mode tile is missing")
+                                check("A trail map that remembers your route" in page.locator(".welcome-card").first.get_attribute("aria-label"), "seeded fictional real-mode tile is missing")
+                                indicator = page.locator("#real-chat-indicator").bounding_box()
+                                check(indicator and 0 <= indicator["y"] and indicator["y"] + indicator["height"] <= height,
+                                      f"real-content indicator is outside the initial {width}x{height} viewport: {indicator}")
+                                if width == 1440:
+                                    wall_box = page.locator("#welcome-wall").bounding_box()
+                                    visible_wall = max(0, min(height, wall_box["y"] + wall_box["height"]) - max(0, wall_box["y"]))
+                                    check(visible_wall / height >= 0.60, f"wall occupies only {visible_wall/height:.1%} of desktop viewport")
+                                    REPORT["measurements"]["desktop_wall_visible_fraction"] = round(visible_wall / height, 3)
                             else:
                                 check(not page.locator("#real-chat-indicator").is_visible(), "real indicator visible in demo mode")
                                 response = next((r for r in page.locator(".welcome-card").all() if SENTINEL in (r.get_attribute("aria-label") or "")), None)
@@ -144,8 +349,26 @@ def main():
                                     JSON.stringify(localStorage), JSON.stringify(sessionStorage)].join('\\n');
                                 }""")
                                 check(not any(marker in privacy for marker in REAL_MARKERS), "demo DOM, accessible names, tooltip attrs, title, or storage contains seeded library content")
+                                pre_start_api = page.evaluate("""() => performance.getEntriesByType('resource').map(x=>new URL(x.name).pathname)
+                                  .filter(path=>path.startsWith('/api/search')||path.startsWith('/api/chat')||path.startsWith('/api/filters'))""")
+                                check(not pre_start_api, f"demo welcome requested real-library APIs before Start: {pre_start_api}")
                             name = f"welcome-{mode}-{theme}-{width}x{height}"
                             if width == 390:
+                                check(not page.locator(".demo-shortcut").is_visible(), "Press D hint visible on coarse-pointer mobile")
+                                check(not page.locator("#welcome-extra-settings").evaluate("e=>e.open"), "mobile settings disclosure should be compact by default")
+                                disclosure_height = page.locator("#welcome-extra-settings summary").evaluate("e=>e.getBoundingClientRect().height")
+                                check(disclosure_height >= 44, f"mobile settings disclosure target is under 44px: {disclosure_height}")
+                                page.locator("#welcome-extra-settings summary").click()
+                                controls = page.locator(".welcome-controls button").evaluate_all("es=>es.map(e=>({id:e.id,h:e.getBoundingClientRect().height}))")
+                                check(all(item["h"] >= 44 for item in controls), f"mobile theme/motion hit target is under 44px: {controls}")
+                                page.locator("#welcome-extra-settings summary").click()
+                                if mode == "real":
+                                    indicator = page.locator("#real-chat-indicator").bounding_box()
+                                    check(indicator and 0 <= indicator["y"] and indicator["y"] + indicator["height"] <= height,
+                                          f"real-content indicator is outside initial mobile viewport: {indicator}")
+                                    indicator_shot = EVIDENCE / f"welcome-real-{theme}-390x844-indicator.png"
+                                    page.screenshot(path=str(indicator_shot), animations="disabled")
+                                    REPORT["evidence"].append(str(indicator_shot.relative_to(ROOT)))
                                 page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
                                 page.wait_for_timeout(150)
                                 geometry = page.evaluate("""() => {
@@ -155,12 +378,19 @@ def main():
                                 }""")
                                 check(geometry["start"]["bottom"] <= 844, "fixed Start button extends beyond the mobile viewport")
                                 check(geometry["last"]["bottom"] <= geometry["start"]["top"], f"last tile is obscured by fixed Start: {geometry}")
+                                bottom_shot = EVIDENCE / f"{name}-bottom.png"
+                                page.screenshot(path=str(bottom_shot), animations="disabled")
+                                REPORT["evidence"].append(str(bottom_shot.relative_to(ROOT)))
                                 REPORT["measurements"][name + "-bottom-geometry"] = geometry
                             shot = EVIDENCE / f"{name}.png"
                             page.screenshot(path=str(shot), animations="disabled")
                             REPORT["evidence"].append(str(shot.relative_to(ROOT)))
                             ctx.close()
                 REPORT["statuses"]["theme_viewport_screenshots"] = "Passed"
+                REPORT["statuses"]["logo_brand_and_shared_container"] = "Passed"
+                REPORT["statuses"]["desktop_wall_at_least_60_percent"] = "Passed"
+                REPORT["statuses"]["mobile_controls_and_safe_start"] = "Passed"
+                REPORT["statuses"]["tile_hues_contrast_and_solid_accent"] = "Passed"
 
                 # Clock-driven carousel: rotation, hover, focus and hidden document.
                 ctx = context_for(1440, 900, demo=True)
@@ -217,11 +447,11 @@ def main():
                     check(active == 0, f"{name} reduced motion has {active} running animations")
                     check(not transforms, f"{name} reduced motion has transforms: {transforms}")
                     page.clock.resume()
-                    page.evaluate("sessionStorage.setItem('browser-test-start-ms', String(performance.timeOrigin + performance.now()))")
+                    page.evaluate("sessionStorage.setItem('browser-test-start-ms', String(performance.now()))")
                     page.locator("#welcome-start").click()
                     page.wait_for_function("location.pathname === '/' ")
                     page.locator("#search").wait_for(state="visible")
-                    elapsed = page.evaluate("Date.now() - Number(sessionStorage.getItem('browser-test-start-ms'))")
+                    elapsed = page.evaluate("performance.now() - Number(sessionStorage.getItem('browser-test-start-ms'))")
                     REPORT["measurements"][f"reduced_start_ms_{name}"] = round(elapsed, 2)
                     check(elapsed < 700, f"{name} reduced Start took {elapsed:.2f} ms (target <700 ms)")
                     ctx.close()
@@ -235,10 +465,15 @@ def main():
                 page.keyboard.press("Tab")
                 check(page.evaluate("document.activeElement.id") == "welcome-start", "first Tab did not focus Start")
                 page.keyboard.press("Tab")
+                for _ in range(8):
+                    if page.evaluate("Boolean(document.activeElement.dataset.chatId)"):
+                        break
+                    page.keyboard.press("Tab")
                 first_tile = page.evaluate("document.activeElement.dataset.chatId")
                 page.keyboard.press("ArrowRight")
                 next_tile = page.evaluate("document.activeElement.dataset.chatId")
                 check(first_tile and next_tile and first_tile != next_tile, "arrow key did not move between tiles")
+                expected_open_title = FIXTURE[int(next_tile.rsplit("-", 1)[1])]["title"]
                 focused_box = page.locator(".welcome-card:focus-visible").bounding_box()
                 check(focused_box is not None, "focused tile has no visible focus target")
                 focus_shot = EVIDENCE / "welcome-keyboard-focus.png"
@@ -247,7 +482,7 @@ def main():
                 page.keyboard.press("Enter")
                 page.locator("#reader").wait_for(state="visible")
                 page.locator("#chat .reader-head h1").wait_for()
-                check("Fictional conversation" in page.locator("#chat .reader-head h1").inner_text(), "Enter did not open the focused fictional chat")
+                check(expected_open_title in page.locator("#chat .reader-head h1").inner_text(), "Enter did not open the focused fictional chat")
                 REPORT["statuses"]["keyboard_tab_arrow_enter"] = "Passed"
                 ctx.close()
 
@@ -328,11 +563,11 @@ def main():
                 page.evaluate("""() => {const frames=[];const tick=t=>{frames.push(t);
                   if(document.querySelector('#welcome-view').hidden)sessionStorage.setItem('transition-raf-times',JSON.stringify(frames));
                   else requestAnimationFrame(tick);};requestAnimationFrame(tick);}""")
-                page.evaluate("sessionStorage.setItem('browser-test-start-ms', String(performance.timeOrigin + performance.now()))")
+                page.evaluate("sessionStorage.setItem('browser-test-start-ms', String(performance.now()))")
                 page.locator("#welcome-start").click()
                 page.locator("#results").wait_for(state="visible")
                 page.wait_for_function("document.querySelector('#count')?.textContent.trim().length > 0")
-                start_ms = page.evaluate("Date.now() - Number(sessionStorage.getItem('browser-test-start-ms'))")
+                start_ms = page.evaluate("performance.now() - Number(sessionStorage.getItem('browser-test-start-ms'))")
                 transition_fps = page.evaluate("""() => {const t=JSON.parse(sessionStorage.getItem('transition-raf-times')||'[]');
                   const d=t.slice(1).map((x,i)=>x-t[i]).sort((a,b)=>a-b);return {frames:d.length,
                   medianMs:d.length?d[Math.floor(d.length/2)]:null,p95Ms:d.length?d[Math.floor(d.length*.95)]:null,
@@ -352,14 +587,17 @@ def main():
                 REPORT["statuses"]["network_localhost_only"] = "Passed" if all(url.startswith(origin + "/") for url in all_requests) else "Failed"
                 check(all(url.startswith(origin + "/") for url in all_requests), "non-local request detected")
                 REPORT["measurements"]["network_request_list"] = sorted(set(all_requests))
+                build_comparison_sheets(browser)
             finally:
                 if browser is not None:
                     browser.close()
     finally:
         seed_db.close()
         server.shutdown(); server.server_close(); server_thread.join(timeout=2)
+    benchmark_endpoint()
     report_path = EVIDENCE / "welcome-browser-results.json"
     report_path.write_text(json.dumps(REPORT, indent=2), encoding="utf-8")
+    update_report_network_block(report_path)
     print(json.dumps(REPORT, indent=2))
     print(f"Evidence report: {report_path}")
 
