@@ -1,4 +1,4 @@
-import json, shutil, sys, urllib.request, urllib.error, importlib.util
+import json, shutil, sys, urllib.request, urllib.error, importlib.util, subprocess, time, threading
 from pathlib import Path
 from .config import load_config
 from .db import connect
@@ -8,6 +8,44 @@ from .vector_index import create_vector_index
 from .semantic_search import SemanticSearch
 from .web import serve, Handler
 from .library import import_chats, NOW, parse_import
+
+def start_ollama(cfg):
+    """Start the local Ollama service if needed, then load Lake's configured models."""
+    endpoint=cfg.ollama_url.rstrip("/")
+    def reachable():
+        try:
+            with urllib.request.urlopen(endpoint+"/api/tags",timeout=2):return True
+        except Exception:return False
+    if not reachable():
+        executable=shutil.which("ollama")
+        if not executable:
+            print("Ollama startup skipped: local API is unavailable and `ollama` was not found on PATH.",flush=True)
+            return
+        try:
+            flags=getattr(subprocess,"CREATE_NO_WINDOW",0)
+            subprocess.Popen([executable,"serve"],stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,creationflags=flags)
+        except Exception as exc:
+            print(f"Could not start Ollama service: {exc}",flush=True);return
+        for _ in range(30):
+            if reachable():break
+            time.sleep(1)
+        else:
+            print("Ollama service did not become available within 30 seconds.",flush=True);return
+    print("Warming configured Ollama models…",flush=True)
+    def warm(model,embedding=False):
+        try:
+            if embedding:
+                payload={"model":model,"input":"Lake startup warmup"}
+                path="/api/embed"
+            else:
+                payload={"model":model,"prompt":"","stream":False,"keep_alive":"10m"}
+                path="/api/generate"
+            request=urllib.request.Request(endpoint+path,json.dumps(payload).encode(),{"Content-Type":"application/json"})
+            with urllib.request.urlopen(request,timeout=600) as response:response.read()
+            print(f"Ollama model ready: {model}",flush=True)
+        except Exception as exc:print(f"Could not warm Ollama model {model}: {exc}",flush=True)
+    tasks=[threading.Thread(target=warm,args=(cfg.model,),daemon=True),threading.Thread(target=warm,args=(cfg.embedding_model,True),daemon=True)]
+    for task in tasks:task.start()
 
 def seed(db):
     chats=[]
@@ -71,6 +109,7 @@ def main():
             total["failed"].extend(report["failed"])
         print(json.dumps(total,ensure_ascii=False,indent=2)); return
     if "--seed" in args: print(seed(db))
+    start_ollama(cfg)
     vector_index=create_vector_index(db,cfg.vector_cache_path)
     embeddings=EmbeddingQueue(db,cfg)
     embeddings.set_index(vector_index)
