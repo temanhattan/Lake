@@ -1,6 +1,7 @@
 {
   "name": "lake-promo",
   "private": true,
+  "license": "MIT",
   "description": "Code-driven promotional video sources for Lake; not part of the shipped app.",
   "scripts": {
     "render:sheet": "node scripts/render_sheet.js",
