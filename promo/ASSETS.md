@@ -20,6 +20,14 @@ No music or third-party audio is included at this checkpoint. The final
 pipeline will use generated sound design or supplied/CC0 audio and will record
 each source and license here before release.
 
+## Capture
+
+- `capture/capture_server.py` seeds a temporary SQLite database with fictional
+  conversations only; it does not open `data/lake.db` or a configured library.
+- `capture/capture_demo.js` uses the MIT-licensed Playwright package declared in
+  `promo/package.json`. Capture metadata records demo mode and local-only
+  requests.
+
 ## Claims
 
 No performance, savings, accuracy, URL, or handle claims are included in the
