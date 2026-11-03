@@ -65,6 +65,9 @@ python -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 Copy-Item config.example.toml config.toml
+New-Item -ItemType Directory imports -Force
+Copy-Item demo\chatgpt\conversations.json imports\
+python -m lake import-folder
 python -m lake
 ```
 
