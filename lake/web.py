@@ -5,6 +5,7 @@ from email.parser import BytesParser
 from email.policy import default
 from .library import (search, chat_detail, parse_import, import_chats, secret_warning,
                       context_block, estimate_tokens, reindex_chat, NOW)
+from .welcome import welcome_tiles
 
 STATIC=Path(__file__).parent/"static"
 
@@ -68,6 +69,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(result)
             rows=[dict(r) for r in search(self.db,query,filters,q.get("sort",["relevance"])[0],100)]
             return self._json({"results":self._attach_result_tags(rows),"mode":"keyword","backend":None})
+        if path=="/api/welcome/tiles":
+            return self._json(welcome_tiles(self.db, demo=q.get("demo",["0"])[0]=="1"))
         if path=="/api/duplicates":
             if not self.semantic:return self._json({"error":"Semantic search is not initialized"},503)
             try:threshold=float(q.get("threshold",[self.config.duplicate_similarity_threshold])[0])
