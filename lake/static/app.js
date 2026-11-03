@@ -56,3 +56,4 @@ const readerObserver=new MutationObserver(()=>{
  feedback.querySelectorAll('[data-outcome]').forEach(b=>b.onclick=async()=>{await fetch('/api/chat/'+encodeURIComponent(chat.querySelector('[data-chat-id]')?.dataset.chatId||location.hash.split('=').pop()),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'feedback',value:b.dataset.outcome})});b.parentElement.querySelector('.meta').textContent='Marked '+b.dataset.outcome});
  panel.append(feedback);
 });readerObserver.observe(document.querySelector('#chat'),{childList:true,subtree:true});
+window.lakeOpenChat=(id)=>openChat(id);
