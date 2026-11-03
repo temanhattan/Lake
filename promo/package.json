@@ -4,6 +4,7 @@
   "description": "Code-driven promotional video sources for Lake; not part of the shipped app.",
   "scripts": {
     "render:sheet": "node scripts/render_sheet.js",
+    "render:storyboard": "node scripts/render_storyboard.js",
     "render": "python scripts/render.py"
   },
   "devDependencies": {

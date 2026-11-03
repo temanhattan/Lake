@@ -10,6 +10,9 @@ characters are original marker-style drawings authored as layered SVG paths in
 [`characters/rig.svg`](./characters/rig.svg). The sheet is generated from that
 rig, not traced from an existing character or imported artwork.
 
+The approved storyboard and data-driven bilingual timing live in
+[`script.json`](./script.json) and [`storyboard.svg`](./storyboard.svg).
+
 ## Planned renderer
 
 The pipeline will use Remotion for deterministic, code-driven scene timing,
