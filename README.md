@@ -7,7 +7,7 @@
 
 Private, local-first gallery for your AI chats: searchable, visual, and ready to **continue from here**.
 
-[![License: pending](https://img.shields.io/badge/license-pending-d9d6ce?labelColor=26332f)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-146b60?labelColor=26332f)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-146b60)](https://www.python.org/)
 
 <p align="center">
@@ -105,6 +105,6 @@ The diagrams use hand-drawn SVG templates, embed the locally vendored OFL font, 
 
 ## License
 
-**License pending:** see [LICENSE](LICENSE).
+Lake's source code and associated documentation are available under the [MIT License](LICENSE).
 
 **Brand note:** the Lake name, wordmark, and visual identity are reserved; see [LICENSE-BRAND.md](LICENSE-BRAND.md).
