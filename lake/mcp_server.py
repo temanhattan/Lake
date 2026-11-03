@@ -145,10 +145,12 @@ class LakeMCP:
 
     def _allowed_project_ids(self):
         allowlist = getattr(self.config, "mcp_allowed_projects", None) or []
-        if not allowlist:
-            return {r[0] for r in self.db.execute("SELECT id FROM projects WHERE mcp_excluded=0")}
+        if not allowlist: return None
         marks = ",".join("?" for _ in allowlist)
         return {r[0] for r in self.db.execute(f"SELECT id FROM projects WHERE name IN ({marks}) AND mcp_excluded=0", tuple(allowlist))}
+
+    def _excluded_project_ids(self):
+        return {r[0] for r in self.db.execute("SELECT id FROM projects WHERE mcp_excluded=1")}
 
     def _allowed_filters(self, filters):
         filters = dict(filters)
@@ -167,6 +169,8 @@ class LakeMCP:
                 if not allowed: return {**filters, "project": -1}
                 # Multiple allowed projects are applied after retrieval using a temporary SQL IN filter.
                 filters["_allowed_project_ids"] = allowed
+        else:
+            filters["_excluded_project_ids"] = self._excluded_project_ids()
         elif filters.get("project") is not None:
             try: filters["project"] = int(filters["project"])
             except (TypeError, ValueError):
@@ -178,11 +182,14 @@ class LakeMCP:
         row=self.db.execute("SELECT archived,project_id FROM chats WHERE id=?",(chat_id,)).fetchone()
         if not row or row["archived"]:return False
         allowed=self._allowed_project_ids()
-        return allowed is None or row["project_id"] in allowed
+        if allowed is not None:return row["project_id"] in allowed
+        return row["project_id"] is None or row["project_id"] not in self._excluded_project_ids()
 
     def _restrict_rows(self, rows, filters):
         allowed = filters.get("_allowed_project_ids")
-        if allowed is None: return rows
+        if allowed is None:
+            excluded=filters.get("_excluded_project_ids",set())
+            return [row for row in rows if row.get("project_id") is None or row.get("project_id") not in excluded]
         if not allowed: return []
         return [row for row in rows if row.get("project_id") in allowed]
 
@@ -259,7 +266,7 @@ class LakeMCP:
     def list_tags(self):
         allowed=self._allowed_project_ids()
         if allowed is None:
-            tags=[r[0] for r in self.db.execute("SELECT DISTINCT t.name FROM tags t JOIN chat_tags ct ON ct.tag_id=t.id JOIN chats c ON c.id=ct.chat_id WHERE c.archived=0 ORDER BY t.name")]
+            tags=[r[0] for r in self.db.execute("SELECT DISTINCT t.name FROM tags t JOIN chat_tags ct ON ct.tag_id=t.id JOIN chats c ON c.id=ct.chat_id WHERE c.archived=0 AND (c.project_id IS NULL OR EXISTS(SELECT 1 FROM projects p WHERE p.id=c.project_id AND p.mcp_excluded=0)) ORDER BY t.name")]
         elif not allowed:tags=[]
         else:
             marks=",".join("?" for _ in allowed)

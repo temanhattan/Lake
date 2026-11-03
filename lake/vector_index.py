@@ -29,6 +29,9 @@ def allowed_chat_ids(db,filters):
         if ids:
             clauses.append("c.project_id IN ("+",".join("?" for _ in ids)+")");args.extend(ids)
         else: clauses.append("0")
+    elif filters.get("_excluded_project_ids"):
+        ids=sorted(filters["_excluded_project_ids"])
+        clauses.append("(c.project_id IS NULL OR c.project_id NOT IN ("+",".join("?" for _ in ids)+"))");args.extend(ids)
     rows=db.execute("SELECT c.id FROM chats c"+(" WHERE "+" AND ".join(clauses) if clauses else ""),args)
     return {r[0] for r in rows}
 

@@ -109,6 +109,9 @@ def search(db, query="", filters=None, sort="relevance", limit=100, offset=0):
         if ids:
             clauses.append("c.project_id IN ("+",".join("?" for _ in ids)+")"); args.extend(ids)
         else: clauses.append("0")
+    elif filters.get("_excluded_project_ids"):
+        ids=sorted(filters["_excluded_project_ids"])
+        clauses.append("(c.project_id IS NULL OR c.project_id NOT IN ("+",".join("?" for _ in ids)+"))"); args.extend(ids)
     base = " WHERE " + " AND ".join(clauses) if clauses else ""
     if query.strip():
         tokens=re.findall(r"\w+",query,flags=re.UNICODE)
