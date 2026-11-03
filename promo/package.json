@@ -1,0 +1,16 @@
+{
+  "name": "lake-promo",
+  "private": true,
+  "description": "Code-driven promotional video sources for Lake; not part of the shipped app.",
+  "scripts": {
+    "render:sheet": "node scripts/render_sheet.js",
+    "render": "python scripts/render.py"
+  },
+  "devDependencies": {
+    "@remotion/cli": "^4.0.0",
+    "@remotion/player": "^4.0.0",
+    "@remotion/renderer": "^4.0.0",
+    "playwright": "^1.49.0",
+    "remotion": "^4.0.0"
+  }
+}
