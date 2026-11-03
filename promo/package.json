@@ -5,6 +5,7 @@
   "scripts": {
     "render:sheet": "node scripts/render_sheet.js",
     "render:storyboard": "node scripts/render_storyboard.js",
+    "capture:demo": "node capture/capture_demo.js",
     "render": "python scripts/render.py"
   },
   "devDependencies": {

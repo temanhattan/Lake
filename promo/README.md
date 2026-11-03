@@ -13,6 +13,20 @@ rig, not traced from an existing character or imported artwork.
 The approved storyboard and data-driven bilingual timing live in
 [`script.json`](./script.json) and [`storyboard.svg`](./storyboard.svg).
 
+## Fictional UI capture
+
+The capture runner starts a temporary SQLite database seeded only with
+fictional promo conversations, enables Lake demo mode before navigation, and
+captures the welcome wall, library, search, chat, and context-block states:
+
+```powershell
+npm run capture:demo
+```
+
+The screenshots and `capture.json` metadata are written to `captures/` (and
+ignored by git). The metadata records the device scale factor, fixture-only
+flag, local request paths, and an empty external-request list.
+
 ## Planned renderer
 
 The pipeline will use Remotion for deterministic, code-driven scene timing,
