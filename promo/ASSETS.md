@@ -1,5 +1,8 @@
 # Promo assets and licenses
 
+The characters and other brand assets are reserved; see
+[`LICENSE-BRAND.md`](../LICENSE-BRAND.md) before reuse.
+
 ## Original artwork
 
 - `characters/rig.svg` and `characters/sheet.svg`: original Lake promo artwork
