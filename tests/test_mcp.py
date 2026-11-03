@@ -93,6 +93,16 @@ class MCPTests(unittest.TestCase):
         self.assertEqual([p["name"].split(BEGIN+"\n")[1].split("\n"+END)[0]
                           for p in self.service.list_projects()["projects"]],["Allowed"])
 
+    def test_empty_allowlist_keeps_unassigned_chats_but_hides_excluded_projects(self):
+        self.config.mcp_allowed_projects=[]
+        import_chats(self.db,[{"source":"manual","source_id":"unassigned","title":"Unassigned memory",
+            "created_at":"2025-01-01T00:00:00Z","messages":[{"role":"user","content":"unassigned-marker"}]}])
+        unassigned=self.db.execute("SELECT id FROM chats WHERE title='Unassigned memory'").fetchone()[0]
+        self.db.execute("UPDATE projects SET mcp_excluded=1 WHERE id=?",(self.hidden,));self.db.commit()
+        found=self.service.search_chats("unassigned-marker",mode="keyword")
+        self.assertEqual([row["chat_id"] for row in found["results"]],[unassigned])
+        self.assertIsNone(self.service.get_card(self.ids["Hidden Wazuh notes"])["card"])
+
     def test_untrusted_instruction_is_only_returned_as_delimited_data(self):
         result=self.service.search_chats("injection",mode="keyword")
         snippet=result["results"][0]["snippet"]
