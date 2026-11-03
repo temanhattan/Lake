@@ -37,6 +37,14 @@ class Handler(BaseHTTPRequestHandler):
                 by_chat[row["chat_id"]].append(row["name"])
         for item in rows:
             item["tags"]=by_chat.get(item.get("id",item.get("chat_id")),[])
+        for item in rows:
+            chat_id=item.get("id",item.get("chat_id"))
+            if chat_id is None: continue
+            provenance=self.db.execute("SELECT ca.generated_by,ca.generated_at,(SELECT e.model_name FROM embeddings e WHERE e.chat_id=c.id AND e.stale=0 ORDER BY e.id DESC LIMIT 1) embedding_model FROM chats c LEFT JOIN cards ca ON ca.chat_id=c.id WHERE c.id=?",(chat_id,)).fetchone()
+            if provenance:
+                item["card_model"]=provenance["generated_by"]
+                item["card_generated_at"]=provenance["generated_at"]
+                item["embedding_model"]=provenance["embedding_model"]
         return rows
     def do_GET(self):
         u=urllib.parse.urlsplit(self.path); path=u.path; q=urllib.parse.parse_qs(u.query)

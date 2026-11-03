@@ -20,7 +20,7 @@ The full unittest discovery run previously reported 27 passing tests and one err
 ## Not verified
 
 - Frame rate and main-thread cost during transitions and scrolling were not measured.
-- Performance on the requested 5,000-chat dataset and the 100,000-chunk vector-search benchmark were not measured. The current database has no sample chats, so no performance or recall claim is made here.
+- The repository has a warmed 100,000-vector timing run recorded in `reports/semantic_benchmark.md`; it uses deterministic random vectors, not realistic conversations, and does not measure retrieval quality. A representative 5,000-chat / 100,000-chunk benchmark and recall measurement remain outstanding. The current database has no sample chats, so no end-to-end performance or recall claim is made here.
 - Import modal keyboard operation and import itself were not included in the final Playwright walkthrough.
 - The browser check used a local mock dataset. A live DevTools network-tab capture against the running Lake server was not available; the mock run observed zero external-origin requests.
 - Screenshots cover the major UI views in both themes at desktop and mobile sizes. Tablet dimensions were checked for overflow, but separate tablet screenshots were not captured.

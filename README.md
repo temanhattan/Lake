@@ -2,7 +2,7 @@
 
 # Lake
 
-Lake is a private, local-first gallery for AI conversations. It uses SQLite, Python, and a local NumPy memory-mapped vector index (or optional sqlite-vec). The server binds to `127.0.0.1` only. Ollama is contacted only for requested local generation and semantic queries/embedding jobs.
+Lake is local memory for your AI-assisted development history. It helps you retrieve prior problems, fixes, and decisions from your conversations, with a gallery-like visual library for browsing. It uses SQLite, Python, and a local NumPy memory-mapped vector index (or optional sqlite-vec). The server binds to `127.0.0.1` only. Ollama is contacted only for requested local generation and semantic queries/embedding jobs.
 
 ## Run
 
@@ -75,7 +75,7 @@ The static frontend uses vanilla JavaScript ES modules and CSS; it adds no frame
 
 DM Sans (UI), Fraunces (display), and a Noto Sans Arabic subset are served from `lake/static/fonts/`. These files are locally vendored WOFF2 assets with their SIL Open Font License texts in `lake/static/fonts/licenses/`. The font CSS selects Latin subsets for the UI/display fonts and Arabic glyphs for Arabic messages. No font CDN or other runtime asset host is used. No animation library is included.
 
-The primary page keeps the full search and filters visible. `Ctrl/Cmd+K` opens a separate action and quick-jump palette. The intro is shown for an empty library and can also be opened from `/welcome`; the component catalogue is at `/design-system`. Search result cards include source/model/date, a bounded marked excerpt, and the structured card summary when available. Search remains available when reduced motion is active. The palette backup action displays the existing local backup command (`python -m lake backup`); the frontend does not add a new backup endpoint.
+The primary page keeps the full search and filters visible. `Ctrl/Cmd+K` opens a separate action and quick-jump palette. The intro is shown for an empty library and can also be opened from `/welcome`; the component catalogue is at `/design-system`. Search result cards include source/model/date, embedding model, a bounded marked excerpt, and the structured card summary when available. Older results are flagged as historical; check current versions before applying a solution. Search remains available when reduced motion is active. The palette backup action displays the existing local backup command (`python -m lake backup`); the frontend does not add a new backup endpoint.
 
 The original 3D gallery remains out of this phase. The inspiration study, captures, and any local recordings stay under `design-research/`, which is ignored by Git.
 
