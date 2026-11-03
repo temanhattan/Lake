@@ -80,6 +80,7 @@ export async function startWelcome() {
   let fetchSequence = 0;
   let fetchController = null;
   let loadingTimer = 0;
+  let appReadyPromise = null;
 
   view.innerHTML = `<div class="welcome-page${introPlayed ? ' is-ready' : ' is-intro'}">
     <section class="welcome-intro" aria-labelledby="welcome-title">
@@ -206,6 +207,15 @@ const reduced = () => preference.matches || localStorage.getItem('lake-motion') 
     void fetchTiles();
   }
 
+  function prepareApp() {
+    if (!appReadyPromise) {
+      // Start Lake's normal library initialization while the welcome view is
+      // already fading out, so navigation does not pay for another document load.
+      appReadyPromise = import('./app.js').then(() => import('./enhancements.js'));
+    }
+    return appReadyPromise;
+  }
+
   function enterApp(chatId = '', importFirst = false, immediate = false) {
     clearTimeout(exitTimer);
     sessionStorage.setItem(START_KEY, '1');
@@ -220,12 +230,25 @@ const reduced = () => preference.matches || localStorage.getItem('lake-motion') 
       page.style.setProperty('--logo-scale', `${Math.max(.45, Math.min(1, to.width / Math.max(1, from.width)))}`);
     }
     page.classList.add('is-exiting');
-    exitTimer = window.setTimeout(() => {
+    const appReady = prepareApp();
+    const finishEntering = async () => {
       const url = new URL('/', location.href);
       if (chatId) url.searchParams.set('chat', chatId);
       if (importFirst) url.searchParams.set('import', '1');
-      location.href = url.pathname + url.search;
-    }, immediate || reduced() ? 0 : 320);
+      history.pushState(history.state, '', url.pathname + url.search);
+      await appReady;
+      view.hidden = true;
+      document.body.classList.remove('lake-welcome-active');
+      document.querySelector('#home-view')?.removeAttribute('hidden');
+      document.querySelector('#reader')?.setAttribute('hidden', '');
+      document.querySelector('#design-view')?.setAttribute('hidden', '');
+      document.querySelector('.skip-link')?.removeAttribute('tabindex');
+      document.querySelector('.topbar .brand')?.removeAttribute('tabindex');
+      if (chatId) await window.lakeOpenChat?.(chatId);
+      if (importFirst) document.querySelector('#import-open')?.click();
+    };
+    if (immediate || reduced()) void finishEntering();
+    else exitTimer = window.setTimeout(() => { void finishEntering(); }, 320);
   }
 
   startButton.addEventListener('click', () => enterApp());
