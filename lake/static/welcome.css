@@ -5,6 +5,7 @@
 .lake-welcome-active .site-footer{display:none}
 .lake-welcome-active .skip-link{display:none}
 .lake-welcome-active #app-main{max-width:none;padding:0 24px 100px}
+.lake-welcome-active #welcome-view{max-width:none;margin:0}
 .welcome-page{--wall-gap:12px;max-width:1480px;margin:0 auto;padding:clamp(22px,4vh,46px) clamp(0px,2vw,26px) 56px;transition:opacity 260ms var(--ease-standard),transform 320ms var(--ease-emphasis)}
 .welcome-intro{position:relative;max-width:1440px;margin:0 auto 26px;display:grid;grid-template-columns:minmax(280px,.8fr) minmax(330px,1.3fr) auto;align-items:end;gap:clamp(22px,4vw,58px)}
 .welcome-brand-row{grid-column:1/-1;display:flex;align-items:center;gap:12px;min-height:40px;color:var(--muted)}
