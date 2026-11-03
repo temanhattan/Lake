@@ -6,13 +6,20 @@
     "render:sheet": "node scripts/render_sheet.js",
     "render:storyboard": "node scripts/render_storyboard.js",
     "capture:demo": "node capture/capture_demo.js",
-    "render": "node scripts/render_frames.js"
+    "captions": "node scripts/generate_captions.js",
+    "sound-design": "node scripts/generate_sound_design.js",
+    "render": "node scripts/render_frames.js",
+    "render:video": "node scripts/render_outputs.js",
+    "render:checks": "node scripts/render_checks.js",
+    "render:gif": "node scripts/render_gif.js",
+    "verify:ocr": "node scripts/verify_ocr.js"
   },
   "devDependencies": {
     "@remotion/cli": "^4.0.0",
     "@remotion/player": "^4.0.0",
     "@remotion/renderer": "^4.0.0",
     "playwright": "^1.49.0",
-    "remotion": "^4.0.0"
+    "remotion": "^4.0.0",
+    "tesseract.js": "^7.0.0"
   }
 }

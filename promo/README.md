@@ -42,6 +42,28 @@ renders review frames into ignored `out/frames/`. The command bundles the
 composition with the MIT-licensed Remotion renderer and copies capture stills
 into a temporary public directory.
 
+Output targets:
+
+```powershell
+npm run captions
+npm run sound-design
+npm run render:video
+npm run render:gif
+```
+
+The resulting ignored files are the English and Arabic vertical masters, the
+16:9 cut, the 15-second teaser, and a 360x640 reduced-motion README GIF. The
+Arabic frame check is `npm run render:checks`; inspect its PNGs for shaped RTL
+text using the OFL Noto Sans Arabic font.
+
+Run the final OCR/privacy report with:
+
+```powershell
+npm run verify:ocr
+```
+
+The report is written to [`reports/VERIFICATION.md`](./reports/VERIFICATION.md).
+
 ## Planned renderer
 
 The pipeline will use Remotion for deterministic, code-driven scene timing,

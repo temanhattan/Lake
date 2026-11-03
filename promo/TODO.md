@@ -6,6 +6,7 @@
 - [x] Add the seeded fictional-library capture flow with demo mode explicitly on.
 - [x] Add `script.json` and the storyboard checkpoint.
 - [x] Add scene compositions and caption-first English/Egyptian Arabic support.
-- [ ] Add caption SRT exports,
+- [x] Add caption SRT exports,
+- [x] Add generated sound design and output render targets.
       audio mix, and all requested output variants.
 - [ ] Run frame OCR allowlist and privacy/IP verification before release.
