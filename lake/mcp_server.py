@@ -171,7 +171,7 @@ class LakeMCP:
                 filters["_allowed_project_ids"] = allowed
         else:
             filters["_excluded_project_ids"] = self._excluded_project_ids()
-        elif filters.get("project") is not None:
+        if filters.get("project") is not None and allowed is None:
             try: filters["project"] = int(filters["project"])
             except (TypeError, ValueError):
                 row = self.db.execute("SELECT id FROM projects WHERE name=?", (str(filters["project"]),)).fetchone()
