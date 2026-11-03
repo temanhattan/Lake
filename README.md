@@ -12,6 +12,8 @@ Lake is local memory for your AI-assisted development history. It helps you retr
 4. Run `python -m lake` from this folder.
 5. Open <http://127.0.0.1:8765>.
 
+Run `python -m lake doctor` for a first-run check of Python, SQLite/FTS, vector backends, Ollama connectivity, and configured model availability.
+
 The SQLite database is created at `./data/lake.db`. SQLite FTS5 is required and is included in most standard Python SQLite builds. Semantic vectors are stored in SQLite; NumPy provides the default memory-mapped cosine search backend. The app itself makes no remote calls. Ollama requests are restricted to a local URL. To import every supported file in the configured import folder from a command line, run `python -m lake import-folder` (or pass a folder path).
 
 ## Import

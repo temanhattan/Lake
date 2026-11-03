@@ -145,9 +145,10 @@ class LakeMCP:
 
     def _allowed_project_ids(self):
         allowlist = getattr(self.config, "mcp_allowed_projects", None) or []
-        if not allowlist: return None
+        if not allowlist:
+            return {r[0] for r in self.db.execute("SELECT id FROM projects WHERE mcp_excluded=0")}
         marks = ",".join("?" for _ in allowlist)
-        return {r[0] for r in self.db.execute(f"SELECT id FROM projects WHERE name IN ({marks})", tuple(allowlist))}
+        return {r[0] for r in self.db.execute(f"SELECT id FROM projects WHERE name IN ({marks}) AND mcp_excluded=0", tuple(allowlist))}
 
     def _allowed_filters(self, filters):
         filters = dict(filters)
@@ -251,7 +252,7 @@ class LakeMCP:
 
     def list_projects(self):
         allowed=self._allowed_project_ids()
-        projects=[dict(row) for row in self.db.execute("SELECT DISTINCT p.id,p.name,p.description FROM projects p JOIN chats c ON c.project_id=p.id WHERE c.archived=0 ORDER BY p.name")]
+        projects=[dict(row) for row in self.db.execute("SELECT DISTINCT p.id,p.name,p.description FROM projects p JOIN chats c ON c.project_id=p.id WHERE c.archived=0 AND p.mcp_excluded=0 ORDER BY p.name")]
         if allowed is not None:projects=[p for p in projects if p["id"] in allowed]
         return cap_response({"notice":NOTICE,"summary":f"{len(projects)} accessible project(s).","projects":self._wrap(projects)})
 

@@ -1,4 +1,4 @@
-import json, shutil, sys
+import json, shutil, sys, urllib.request, urllib.error, importlib.util
 from pathlib import Path
 from .config import load_config
 from .db import connect
@@ -38,9 +38,27 @@ def backup(db,path):
     (out/"chats.json").write_text(json.dumps(export,ensure_ascii=False,indent=2),encoding="utf-8")
     print(f"Backup written to {out.resolve()}")
 
+def doctor(cfg,db):
+    checks=[]
+    checks.append(("Python",sys.version.split()[0]+(" (OK)" if sys.version_info >= (3,11) else " (need 3.11+)")))
+    checks.append(("SQLite FTS5","available" if db.execute("SELECT sqlite_compileoption_used('ENABLE_FTS5')").fetchone()[0] or db.execute("SELECT name FROM sqlite_master WHERE name='message_fts'").fetchone() else "unavailable"))
+    checks.append(("NumPy", "available" if importlib.util.find_spec("numpy") else "missing"))
+    checks.append(("sqlite-vec", "installed (optional)" if importlib.util.find_spec("sqlite_vec") else "not installed; NumPy fallback"))
+    try:
+        with urllib.request.urlopen(cfg.ollama_url.rstrip("/")+"/api/tags",timeout=3) as response: tags=json.loads(response.read()).get("models",[])
+        names={m.get("name","") for m in tags}
+        checks.append(("Ollama","reachable"))
+        for label,model in (("Chat model",cfg.model),("Embedding model",cfg.embedding_model)):
+            checks.append((label, "available" if any(n==model or n.startswith(model+":") for n in names) else f"missing ({model})"))
+    except Exception as exc:checks.append(("Ollama",f"unavailable ({exc})"))
+    for label,value in checks:print(f"{label}: {value}")
+
 def main():
-    cfg=load_config(); db=connect(cfg.db_path)
     args=sys.argv[1:]
+    cfg=load_config()
+    if args and args[0] in {"doctor","diagnose"}:
+        db=connect(cfg.db_path);doctor(cfg,db);db.close();return
+    db=connect(cfg.db_path)
     if args and args[0]=="backup": backup(db,args[1] if len(args)>1 else "./backups"); return
     if args and args[0]=="import-folder":
         folder=Path(args[1] if len(args)>1 else cfg.import_folder)

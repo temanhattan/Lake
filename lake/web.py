@@ -79,7 +79,8 @@ class Handler(BaseHTTPRequestHandler):
         if path.startswith("/api/chat/"):
             d=chat_detail(self.db,path.split("/")[-1])
             if not d: return self._json({"error":"Chat not found"},404)
-            return self._json({"chat":dict(d["chat"]),"messages":[dict(x) for x in d["messages"]],"card":dict(d["card"]) if d["card"] else None,"tags":d["tags"],"secret_warning":secret_warning("\n".join(x["content"] for x in d["messages"])) if self.config.secret_scan else False})
+            feedback=self.db.execute("SELECT outcome,note,updated_at FROM solution_feedback WHERE chat_id=?",(d["chat"]["id"],)).fetchone()
+            return self._json({"chat":dict(d["chat"]),"messages":[dict(x) for x in d["messages"]],"card":dict(d["card"]) if d["card"] else None,"tags":d["tags"],"feedback":dict(feedback) if feedback else None,"secret_warning":secret_warning("\n".join(x["content"] for x in d["messages"])) if self.config.secret_scan else False})
         if path.startswith("/api/export/"):
             d=chat_detail(self.db,path.split("/")[-1])
             if not d: return self._send(404,b"")
@@ -122,6 +123,11 @@ class Handler(BaseHTTPRequestHandler):
                         for chat_id in report.get("changed",[]):self.embeddings.enqueue_chat(chat_id)
                 except Exception as exc: total["failed"].append({"title":name,"reason":str(exc)})
             return self._json(total)
+        if path=="/api/import-preview":
+            try:
+                obj=json.loads(self._body() or b"{}")
+                return self._json({"secret_warning":secret_warning(obj.get("text",""))})
+            except Exception:return self._json({"error":"Invalid preview request"},400)
         try: obj=json.loads(self._body() or b"{}")
         except Exception: return self._json({"error":"Invalid JSON"},400)
         if path=="/api/embeddings/retry":
@@ -129,7 +135,7 @@ class Handler(BaseHTTPRequestHandler):
             self.embeddings.enqueue_all();return self._json({"queued":True})
         if path.startswith("/api/chat/"):
             chat_id=path.split("/")[-1]; action=obj.get("action")
-            if action in ("pin","archive","rename","delete","project","tag"):
+            if action in ("pin","archive","rename","delete","project","tag","mcp_exclude","feedback"):
                 if action=="delete":
                     self.db.execute("DELETE FROM message_fts WHERE chat_id=?",(chat_id,))
                     self.db.execute("DELETE FROM card_fts WHERE chat_id=?",(chat_id,))
@@ -146,6 +152,15 @@ class Handler(BaseHTTPRequestHandler):
                     if name:
                         self.db.execute("INSERT OR IGNORE INTO tags(name) VALUES(?)",(name,)); tid=self.db.execute("SELECT id FROM tags WHERE name=?",(name,)).fetchone()[0]
                         self.db.execute("INSERT OR IGNORE INTO chat_tags(chat_id,tag_id) VALUES(?,?)",(chat_id,tid))
+                if action=="feedback":
+                    outcome=obj.get("value")
+                    if outcome not in ("worked","failed"):return self._json({"error":"Feedback must be worked or failed"},400)
+                    self.db.execute("INSERT INTO solution_feedback(chat_id,outcome,note,updated_at) VALUES(?,?,?,?) ON CONFLICT(chat_id) DO UPDATE SET outcome=excluded.outcome,note=excluded.note,updated_at=excluded.updated_at",(chat_id,outcome,str(obj.get("note",""))[:1000],NOW()))
+                if action=="mcp_exclude":
+                    row=self.db.execute("SELECT project_id FROM chats WHERE id=?",(chat_id,)).fetchone()
+                    if row and row[0] is not None:
+                        current=self.db.execute("SELECT mcp_excluded FROM projects WHERE id=?",(row[0],)).fetchone()[0]
+                        self.db.execute("UPDATE projects SET mcp_excluded=? WHERE id=?",(int(not current) if "value" not in obj else int(bool(obj["value"])),row[0]))
                 self.db.commit(); return self._json({"ok":True})
         if path.startswith("/api/card/"):
             chat_id=path.split("/")[-1]

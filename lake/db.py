@@ -1,7 +1,7 @@
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 MIGRATIONS = ["""
 CREATE TABLE chats (
@@ -67,7 +67,10 @@ CREATE INDEX embedding_jobs_progress ON embedding_jobs(model_name,status);
 ALTER TABLE embeddings ADD COLUMN text_content TEXT NOT NULL DEFAULT '';
 CREATE INDEX embeddings_signature ON embeddings(model_name,stale,id,created_at,dim);
 UPDATE embeddings SET stale=1;
-UPDATE embedding_jobs SET status='pending',error='Embedding text cache migration',updated_at=datetime('now');
+            UPDATE embedding_jobs SET status='pending',error='Embedding text cache migration',updated_at=datetime('now');
+""", """
+ALTER TABLE projects ADD COLUMN mcp_excluded INTEGER NOT NULL DEFAULT 0 CHECK(mcp_excluded IN (0,1));
+CREATE TABLE solution_feedback (chat_id TEXT PRIMARY KEY REFERENCES chats(id) ON DELETE CASCADE, outcome TEXT NOT NULL CHECK(outcome IN ('worked','failed')), note TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL);
 """]
 
 
