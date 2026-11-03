@@ -3,6 +3,9 @@
 This folder contains the re-renderable promo sources only. It is dev-only and
 is not imported by the Lake application.
 
+The characters and other brand assets are reserved; see
+[`LICENSE-BRAND.md`](../LICENSE-BRAND.md) before reuse.
+
 ## Current checkpoint
 
 The character rig and sheet are the first build-order checkpoint. The two
