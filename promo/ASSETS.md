@@ -20,6 +20,9 @@ No music or third-party audio is included at this checkpoint. The final
 pipeline will use generated sound design or supplied/CC0 audio and will record
 each source and license here before release.
 
+- `public/sound-design.wav`: generated in code by `scripts/generate_sound_design.js`;
+  original pen-pop accents, no third-party recording or music.
+
 ## Capture
 
 - `capture/capture_server.py` seeds a temporary SQLite database with fictional

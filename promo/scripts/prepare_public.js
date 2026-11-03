@@ -11,6 +11,11 @@ function prepare() {
     if (!fs.existsSync(source)) throw new Error(`Missing capture ${source}; run npm run capture:demo first`);
     fs.copyFileSync(source, path.join(captureDir, name));
   }
+  for (const name of ["dm-sans.woff2", "arabic.woff2"]) {
+    const source = path.join(root, "..", "lake", "static", "fonts", name);
+    if (!fs.existsSync(source)) throw new Error(`Missing OFL font ${source}`);
+    fs.copyFileSync(source, path.join(publicDir, name));
+  }
   console.log("Prepared Remotion public captures.");
 }
 

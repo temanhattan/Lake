@@ -3,6 +3,8 @@ out/
 renders/
 captures/
 tmp/
+public/
+eng.traineddata
 *.mp4
 *.webm
 *.gif

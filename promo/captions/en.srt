@@ -1,0 +1,48 @@
+1
+00:00:00,200 --> 00:00:02,800
+I just solved this problem. Again.
+
+2
+00:00:03,200 --> 00:00:05,600
+Three chats. Same context.
+
+3
+00:00:05,800 --> 00:00:08,000
+Explain it from scratch.
+
+4
+00:00:08,200 --> 00:00:11,600
+Pay twice. Feel clever somehow.
+
+5
+00:00:12,200 --> 00:00:17,600
+Lake: a private gallery for your AI chats.
+
+6
+00:00:18,200 --> 00:00:21,000
+Press Start. Search how you remember it.
+
+7
+00:00:21,200 --> 00:00:25,800
+There it is. The chat you meant.
+
+8
+00:00:26,000 --> 00:00:29,000
+Continue from here.
+
+9
+00:00:29,200 --> 00:00:33,600
+A compact context block. Ready to paste.
+
+10
+00:00:34,200 --> 00:00:40,800
+No accounts. No cloud. Nothing leaves your laptop.
+
+11
+00:00:41,200 --> 00:00:45,800
+Still in testing. Summaries can be wrong. The original chat stays.
+
+12
+00:00:46,200 --> 00:00:51,800
+Try Lake. <REPO_URL> · <HANDLE>
+

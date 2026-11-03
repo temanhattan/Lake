@@ -2,12 +2,13 @@ const path = require("node:path");
 const { bundle } = require("@remotion/bundler");
 const { renderFrames, selectComposition } = require("@remotion/renderer");
 const { prepare } = require("./prepare_public");
+require("./generate_sound_design");
 
 async function main() {
   prepare();
   const root = path.resolve(__dirname, "..");
   const serveUrl = await bundle({ entryPoint: path.join(root, "src", "index.jsx"), webpackOverride: (config) => config });
-  const composition = await selectComposition({ serveUrl, id: "LakePromo" });
+  const composition = await selectComposition({ serveUrl, id: "LakePromoEN" });
   await renderFrames({
     serveUrl,
     composition,
