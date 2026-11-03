@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1080" role="img"
+     aria-labelledby="title description">
+  <title id="title">Lake promo storyboard</title>
+  <desc id="description">Seven hand-drawn storyboard frames for the Lake explainer.</desc>
+  <defs>
+    <style>
+      .ink{fill:none;stroke:#26332f;stroke-width:7;stroke-linecap:round;stroke-linejoin:round}
+      .paper{fill:#f7f4eb}.teal{fill:#71cabb}.coral{fill:#e58f70}
+      .gold{fill:#e9c66b}.lav{fill:#b5a7d6}.inkfill{fill:#26332f}
+      .heading{font-family:"DM Sans",sans-serif;font-size:30px;font-weight:700;fill:#26332f}
+      .label{font-family:"DM Sans",sans-serif;font-size:22px;font-weight:700;fill:#26332f}
+      .caption{font-family:"DM Sans",sans-serif;font-size:18px;fill:#26332f}
+    </style>
+  </defs>
+  <rect width="1600" height="1080" class="paper"/>
+  <text x="70" y="65" class="heading">LAKE · storyboard checkpoint · 52 seconds · caption-first</text>
+
+  <g transform="translate(70 115)">
+    <rect width="440" height="390" rx="18" class="paper ink"/>
+    <text x="24" y="42" class="label">01 · HOOK · 0–3s</text>
+    <rect x="105" y="82" width="230" height="140" rx="12" class="lav ink"/>
+    <path d="M135 190 L305 190 M145 112 L292 112 M145 140 L270 140" class="ink"/>
+    <circle cx="220" cy="292" r="52" class="paper ink"/>
+    <path d="M178 258 Q220 220 262 258 M190 300 Q220 288 250 300" class="ink"/>
+    <text x="24" y="348" class="caption">Same problem. Again.</text>
+  </g>
+  <g transform="translate(580 115)">
+    <rect width="440" height="390" rx="18" class="paper ink"/>
+    <text x="24" y="42" class="label">02 · PROBLEM · 3–12s</text>
+    <rect x="33" y="90" width="112" height="94" rx="8" class="coral ink"/>
+    <rect x="164" y="75" width="112" height="94" rx="8" class="lav ink"/>
+    <rect x="294" y="98" width="112" height="94" rx="8" class="gold ink"/>
+    <path d="M53 119 L123 119 M185 105 L255 105 M314 128 L384 128" class="ink"/>
+    <path d="M47 246 Q125 210 202 250 T370 242" class="ink"/>
+    <circle cx="92" cy="280" r="28" class="teal ink"/><circle cx="320" cy="280" r="28" class="teal ink"/>
+    <text x="24" y="348" class="caption">Three tabs. Two explanations.</text>
+  </g>
+  <g transform="translate(1090 115)">
+    <rect width="440" height="390" rx="18" class="paper ink"/>
+    <text x="24" y="42" class="label">03 · MEET LAKE · 12–18s</text>
+    <path d="M132 100 C112 100 105 130 105 175 L105 260 M105 175 L65 186 M105 260 Q85 300 58 287" class="ink"/>
+    <path d="M223 184 C195 184 177 203 180 230 C184 257 215 270 239 251 C257 236 255 204 237 191Z" class="teal ink"/>
+    <path d="M207 211 Q216 204 224 211 M231 211 Q240 204 248 211 M217 236 Q226 246 237 236" class="ink"/>
+    <text x="24" y="348" class="caption">A private gallery for AI chats.</text>
+  </g>
+
+  <g transform="translate(70 580)">
+    <rect width="440" height="390" rx="18" class="paper ink"/>
+    <text x="24" y="42" class="label">04 · DEMO · 18–34s</text>
+    <rect x="35" y="78" width="370" height="226" rx="12" class="lav ink"/>
+    <rect x="55" y="100" width="92" height="70" rx="7" class="paper ink"/>
+    <rect x="164" y="100" width="92" height="70" rx="7" class="paper ink"/>
+    <rect x="273" y="100" width="92" height="70" rx="7" class="paper ink"/>
+    <path d="M55 208 L330 208 M55 238 L270 238 M55 268 L350 268" class="ink"/>
+    <circle cx="374" cy="240" r="12" class="coral ink"/>
+    <text x="24" y="348" class="caption">Search → continue → paste.</text>
+  </g>
+  <g transform="translate(580 580)">
+    <rect width="440" height="390" rx="18" class="paper ink"/>
+    <text x="24" y="42" class="label">05 · PRIVACY · 34–41s</text>
+    <rect x="86" y="121" width="270" height="150" rx="10" class="teal ink"/>
+    <path d="M66 288 L376 288" class="ink"/>
+    <rect x="190" y="157" width="61" height="59" rx="8" class="gold ink"/>
+    <path d="M205 157 Q205 123 220 123 Q236 123 236 157 M206 186 L236 186" class="ink"/>
+    <path d="M42 92 Q220 47 398 92 L398 313 Q220 354 42 313Z" class="ink"/>
+    <path d="M333 80 L399 145 M399 80 L333 145" class="ink"/>
+    <text x="24" y="348" class="caption">Stays on this laptop.</text>
+  </g>
+  <g transform="translate(1090 580)">
+    <rect width="440" height="390" rx="18" class="paper ink"/>
+    <text x="24" y="42" class="label">06 · HONEST · 41–46s</text>
+    <circle cx="105" cy="152" r="48" class="teal ink"/>
+    <path d="M82 141 Q93 132 103 141 M113 141 Q124 132 134 141 M94 169 Q106 179 118 169" class="ink"/>
+    <rect x="176" y="112" width="94" height="76" rx="10" class="coral ink"/>
+    <path d="M195 150 L251 150 M206 130 L239 172" class="ink"/>
+    <path d="M65 241 Q220 215 365 241" class="ink"/>
+    <text x="24" y="285" class="caption">Summaries can be wrong.</text>
+    <path d="M220 310 L220 365" class="ink"/>
+    <text x="242" y="333" class="label">07 · START · 46–52s</text>
+    <path d="M65 352 Q90 328 113 351 M113 351 Q137 328 160 352" class="ink"/>
+    <path d="M250 360 L377 360 M313 340 L377 340" class="ink"/>
+    <text x="24" y="382" class="caption">Original stays. Try Lake.</text>
+  </g>
+</svg>

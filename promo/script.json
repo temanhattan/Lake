@@ -1,0 +1,147 @@
+{
+  "title": "Lake: stop re-explaining yourself",
+  "version": 1,
+  "fps": 30,
+  "durationSeconds": 52,
+  "safeZone": {
+    "topPercent": 10,
+    "bottomPercent": 18,
+    "captionMaxLines": 2,
+    "minimumTextPxAtMaster": 44
+  },
+  "voiceover": {
+    "optional": true,
+    "file": "<VOICEOVER_FILE_OR_NONE>",
+    "retimeScenesFromAudio": true
+  },
+  "scenes": [
+    {
+      "id": "hook",
+      "number": 1,
+      "start": 0,
+      "duration": 3,
+      "visual": "The Re-explainer stares at a glowing screen while a tiny cursor loops back to the same paragraph.",
+      "animationCue": "Screen blinks once; tired eyes drop; caption lands with a small paper-pop overshoot.",
+      "captions": {
+        "en": [
+          {"start": 0.2, "end": 2.8, "text": "I just solved this problem. Again."}
+        ],
+        "ar": [
+          {"start": 0.2, "end": 2.8, "text": "أنا لسه حالل المشكلة دي. تاني."}
+        ]
+      }
+    },
+    {
+      "id": "problem",
+      "number": 2,
+      "start": 3,
+      "duration": 9,
+      "visual": "Three generic browser tabs split apart; chat bubbles scatter; an example token counter ticks from 1 to 2.",
+      "animationCue": "Tabs wobble outward; the character re-types the same explanation; counter is stamped 'example'.",
+      "captions": {
+        "en": [
+          {"start": 3.2, "end": 5.6, "text": "Three chats. Same context."},
+          {"start": 5.8, "end": 8.0, "text": "Explain it from scratch."},
+          {"start": 8.2, "end": 11.6, "text": "Pay twice. Feel clever somehow."}
+        ],
+        "ar": [
+          {"start": 3.2, "end": 5.6, "text": "تلات شاتات. نفس الحكاية."},
+          {"start": 5.8, "end": 8.0, "text": "وتشرح من الأول."},
+          {"start": 8.2, "end": 11.6, "text": "وتدفع مرتين. عبقرية يعني."}
+        ]
+      }
+    },
+    {
+      "id": "meet-lake",
+      "number": 3,
+      "start": 12,
+      "duration": 6,
+      "visual": "The real handwritten Lake L stroke draws itself; Ripple pops out from the loop and dusts off their feet.",
+      "animationCue": "L stroke uses path draw-on; Ripple squash-and-stretches on landing and raises one eyebrow.",
+      "captions": {
+        "en": [
+          {"start": 12.2, "end": 17.6, "text": "Lake: a private gallery for your AI chats."}
+        ],
+        "ar": [
+          {"start": 12.2, "end": 17.6, "text": "Lake: معرض خاص لشاتات الـAI بتاعتك."}
+        ]
+      }
+    },
+    {
+      "id": "demo",
+      "number": 4,
+      "start": 18,
+      "duration": 16,
+      "visual": "Fictional demo library: welcome wall -> Start -> vague search -> matching chat snippet -> continue from here -> compact context block.",
+      "animationCue": "UI stays calm and legible; cursor and click rings are added in post; Ripple points, reacts, then celebrates.",
+      "capture": {
+        "source": "tests/browser/run_welcome.py",
+        "demoMode": true,
+        "deviceScaleFactor": 2,
+        "fixtureOnly": true
+      },
+      "captions": {
+        "en": [
+          {"start": 18.2, "end": 21.0, "text": "Press Start. Search how you remember it."},
+          {"start": 21.2, "end": 25.8, "text": "There it is. The chat you meant."},
+          {"start": 26.0, "end": 29.0, "text": "Continue from here."},
+          {"start": 29.2, "end": 33.6, "text": "A compact context block. Ready to paste."}
+        ],
+        "ar": [
+          {"start": 18.2, "end": 21.0, "text": "دوس Start. دوّر بالكلام اللي فاكره."},
+          {"start": 21.2, "end": 25.8, "text": "أهو. الشات اللي كنت عايزه."},
+          {"start": 26.0, "end": 29.0, "text": "كمّل من هنا."},
+          {"start": 29.2, "end": 33.6, "text": "بلُوكة صغيرة للسياق. انسخها وخلاص."}
+        ]
+      }
+    },
+    {
+      "id": "privacy",
+      "number": 5,
+      "start": 34,
+      "duration": 7,
+      "visual": "A laptop gets a hand-drawn lock; a dashed boundary surrounds it; a cloud icon is crossed out.",
+      "animationCue": "Boundary draws around the laptop; cloud crosses itself out with one clean marker stroke.",
+      "captions": {
+        "en": [
+          {"start": 34.2, "end": 40.8, "text": "No accounts. No cloud. Nothing leaves your laptop."}
+        ],
+        "ar": [
+          {"start": 34.2, "end": 40.8, "text": "مفيش حسابات. مفيش كلاود. مفيش حاجة بتطلع من اللابتوب."}
+        ]
+      }
+    },
+    {
+      "id": "honest-bit",
+      "number": 6,
+      "start": 41,
+      "duration": 5,
+      "visual": "Ripple sheepishly holds a tiny local-model brain beside the untouched original transcript.",
+      "animationCue": "Brain wiggles; Ripple shrugs; transcript stays solid and readable.",
+      "captions": {
+        "en": [
+          {"start": 41.2, "end": 45.8, "text": "Still in testing. Summaries can be wrong. The original chat stays."}
+        ],
+        "ar": [
+          {"start": 41.2, "end": 45.8, "text": "لسه بنجرّب. الملخّص ممكن يِغلط. الشات الأصلي موجود دايمًا."}
+        ]
+      }
+    },
+    {
+      "id": "start",
+      "number": 7,
+      "start": 46,
+      "duration": 6,
+      "visual": "Ripple and The Re-explainer wave beside a hand-lettered Lake lockup and two empty CTA fields.",
+      "animationCue": "Both wave on alternating beats; CTA underline draws in last; placeholders remain visibly unfilled.",
+      "captions": {
+        "en": [
+          {"start": 46.2, "end": 51.8, "text": "Try Lake. <REPO_URL> · <HANDLE>"}
+        ],
+        "ar": [
+          {"start": 46.2, "end": 51.8, "text": "جرّب Lake. <REPO_URL> · <HANDLE>"}
+        ]
+      }
+    }
+  ]
+}
