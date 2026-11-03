@@ -5,6 +5,7 @@
 - [ ] Decide whether to supply a voiceover file: `<VOICEOVER_FILE_OR_NONE>`
 - [x] Add the seeded fictional-library capture flow with demo mode explicitly on.
 - [x] Add `script.json` and the storyboard checkpoint.
-- [ ] Add scene compositions, English/Egyptian Arabic captions,
+- [x] Add scene compositions and caption-first English/Egyptian Arabic support.
+- [ ] Add caption SRT exports,
       audio mix, and all requested output variants.
 - [ ] Run frame OCR allowlist and privacy/IP verification before release.

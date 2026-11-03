@@ -27,6 +27,21 @@ The screenshots and `capture.json` metadata are written to `captures/` (and
 ignored by git). The metadata records the device scale factor, fixture-only
 flag, local request paths, and an empty external-request list.
 
+## Scene composition checkpoint
+
+The Remotion composition in [`src/Promo.jsx`](./src/Promo.jsx) reads scene
+timings and captions directly from `script.json`. It supports English and
+Egyptian Arabic caption props, RTL alignment for Arabic, a safe caption zone,
+and a `reducedMotion` prop that disables the boil/wobble motion. After capture:
+
+```powershell
+npm run render
+```
+
+renders review frames into ignored `out/frames/`. The command bundles the
+composition with the MIT-licensed Remotion renderer and copies capture stills
+into a temporary public directory.
+
 ## Planned renderer
 
 The pipeline will use Remotion for deterministic, code-driven scene timing,
