@@ -320,7 +320,7 @@ def main():
                             check(visual["logoCount"] == 1 and visual["duplicateNameCount"] == 0, "welcome page has a duplicate Lake wordmark")
                             check(max(visual["leftEdges"]) - min(visual["leftEdges"]) <= 1.0, f"logo, headline, and wall do not share a left edge: {visual['leftEdges']}")
                             check(visual["headlineWrap"] == "balance", f"headline text-wrap is not balanced: {visual['headlineWrap']}")
-                            check(visual["minContrast"] >= 4.5, f"gallery text fails AA contrast: {visual}")
+                            check(visual["minContrast"] >= 6.0, f"gallery text contrast is below the 6:1 polish target: {visual}")
                             REPORT["measurements"][f"{mode}-{theme}-tile_hues"] = visual["hues"]
                             REPORT["measurements"][f"{mode}-{theme}-minimum_text_contrast"] = round(visual["minContrast"], 2)
                             if mode == "real":

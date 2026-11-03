@@ -57,17 +57,17 @@
 .welcome-card--featured .welcome-card__summary-short{display:none}
 .welcome-card--featured .welcome-card__summary-full{display:block;max-width:48ch;font-size:clamp(15px,1.25vw,18px);line-height:1.52}
 .welcome-card__accent{position:absolute;inset:auto 22px 22px auto;width:clamp(54px,6vw,86px);aspect-ratio:1;border:1px solid color-mix(in srgb,var(--tile-tone) 44%,transparent);border-radius:50%;opacity:.3;pointer-events:none}
-.welcome-card__head,.welcome-card__foot{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--ink-soft);font-size:var(--text-xs)}
+.welcome-card__head,.welcome-card__foot{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--ink);font-size:var(--text-xs)}
 .welcome-card__project{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.08em;text-transform:uppercase}
 .welcome-card__model{flex:0 0 auto;border:1px solid var(--line-strong);border-radius:999px;padding:3px 8px;max-width:46%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .welcome-card__title{font:650 clamp(18px,1.55vw,23px)/1.15 var(--font-display);max-width:24ch;text-wrap:pretty}
-.welcome-card__summary-short,.welcome-card__summary-full{color:var(--ink-soft);font-size:var(--text-sm);line-height:1.45}
+.welcome-card__summary-short,.welcome-card__summary-full{color:var(--ink);font-size:var(--text-sm);line-height:1.45}
 .welcome-card__summary-full{display:none}
 .welcome-card:hover .welcome-card__summary-short,.welcome-card:focus-visible .welcome-card__summary-short{display:none}
 .welcome-card:hover .welcome-card__summary-full,.welcome-card:focus-visible .welcome-card__summary-full{display:block}
 .welcome-card__foot{margin-top:auto;justify-content:flex-start;flex-wrap:wrap;padding-top:4px}
 .welcome-card__tags{display:flex;gap:5px;flex-wrap:wrap}
-.welcome-tag{color:var(--ink-soft);border:1px solid var(--line-strong);border-radius:999px;padding:2px 7px}
+.welcome-tag{color:var(--ink);border:1px solid var(--line-strong);border-radius:999px;padding:2px 7px}
 .welcome-card--solid-accent{background:var(--tile-tone);border-color:var(--tile-tone);color:#fff}
 .welcome-card--solid-accent::before{background:radial-gradient(ellipse at 90% 0%,rgb(255 255 255 / .14),transparent 56%);opacity:1}
 .welcome-card--solid-accent::after,.welcome-card--solid-accent .welcome-card__accent{border-color:rgb(255 255 255 / .25);box-shadow:0 0 0 14px rgb(255 255 255 / .035),0 0 0 29px rgb(255 255 255 / .025)}

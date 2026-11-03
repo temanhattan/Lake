@@ -12,20 +12,20 @@ Run date: 2026-11-03. Browser: installed Google Chrome 156.0.8078.74, Playwright
 | Archived and secrets-flagged chats excluded | **Passed** | [test_welcome.py](tests/test_welcome.py): `test_archived_and_secret_flagged_chats_never_appear_in_real_mode`. |
 | Unscanned chat with a fake key | **Passed** | [test_welcome.py](tests/test_welcome.py): verifies an unscanned transcript is actually passed to the detector before eligibility and is excluded. |
 | Secret-warning timing and scan cache | **Passed** | [welcome.py](lake/welcome.py), [library.py](lake/library.py), [test_welcome.py](tests/test_welcome.py): there is no persisted warning flag. Import preview checks on demand; welcome eligibility scans candidates server-side on first wall request, caches only `{content_hash: boolean}`, invalidates the prior digest when an import changes content, and stops scanning after 24 eligible chats. The detail endpoint calculates its warning when requested if secret scanning is enabled. |
-| 5,000-chat endpoint benchmark | **Passed** | [welcome-browser-results.json](design-research/welcome-evidence/welcome-browser-results.json): cold **88.96 ms**, warm **67.07 ms** (target: warm under 300 ms), 24 returned. Both timings use the local HTTP endpoint and fictional data. |
+| 5,000-chat endpoint benchmark | **Passed** | [welcome-browser-results.json](design-research/welcome-evidence/welcome-browser-results.json): cold **66.55 ms**, warm **43.80 ms** (target: warm under 300 ms), 24 returned. Both timings use the local HTTP endpoint and fictional data. |
 | Eight real/demo light/dark viewport screenshots | **Passed** | [real light desktop](design-research/welcome-evidence/welcome-real-light-1440x900.png), [real dark desktop](design-research/welcome-evidence/welcome-real-dark-1440x900.png), [demo light desktop](design-research/welcome-evidence/welcome-demo-light-1440x900.png), [demo dark desktop](design-research/welcome-evidence/welcome-demo-dark-1440x900.png), [real light mobile](design-research/welcome-evidence/welcome-real-light-390x844.png), [real dark mobile](design-research/welcome-evidence/welcome-real-dark-390x844.png), [demo light mobile](design-research/welcome-evidence/welcome-demo-light-390x844.png), [demo dark mobile](design-research/welcome-evidence/welcome-demo-dark-390x844.png). Mobile captures are at the bottom of the stream. |
 | Before/after comparison sheets | **Passed** | [desktop light](design-research/welcome-evidence/welcome-before-after-desktop-light.png), [desktop dark](design-research/welcome-evidence/welcome-before-after-desktop-dark.png), [mobile light](design-research/welcome-evidence/welcome-before-after-mobile-light.png), [mobile dark](design-research/welcome-evidence/welcome-before-after-mobile-dark.png). |
 | Logo, headline, wall alignment and compact hero | **Passed** | [welcome-browser-results.json](design-research/welcome-evidence/welcome-browser-results.json): exactly one welcome mark, no extra serif brand name, equal measured left edges, balanced headline wrapping, and the desktop wall occupies **61.7%** of the 900px viewport. |
 | Brand mark stroke weight | **Passed** | [welcome-real-light-1440x900.png](design-research/welcome-evidence/welcome-real-light-1440x900.png), [welcome.css](lake/static/welcome.css): displayed SVG stroke is 28px versus the available handwritten SVG's 10px path stroke (**2.8×**). The requested `assets/brand/lake-handwriting-original.jpg` is absent from the workspace, so a JPG overlay comparison is **Not run**; the 2.8× ratio is against the available SVG source. |
-| Tile variety and text contrast | **Passed** | [welcome-browser-results.json](design-research/welcome-evidence/welcome-browser-results.json): six deterministic tag/project hues and at least one inverted solid accent in all four theme/mode combinations; measured minimum text contrast is **4.74:1** light and **6.93:1** dark. |
+| Tile variety and text contrast | **Passed** | [welcome-browser-results.json](design-research/welcome-evidence/welcome-browser-results.json): six deterministic tag/project hues and at least one inverted solid accent in all four theme/mode combinations; measured minimum text contrast is **6.93:1** in both themes. |
 | Mobile settings and fixed Start | **Passed** | [real light mobile indicator view](design-research/welcome-evidence/welcome-real-light-390x844-indicator.png), [real dark mobile indicator view](design-research/welcome-evidence/welcome-real-dark-390x844-indicator.png), plus the four bottom-of-stream screenshots above. At 390×844, Start bounds are y=778–832; at bottom scroll the last tile ends at y=705.52 real / y=706.30 demo, leaving at least 71px clear. Theme and Motion controls and the settings disclosure have 44px targets; the D hint is hidden for coarse pointers. |
 | “Real chats visible” indicator position | **Passed** | [desktop real light](design-research/welcome-evidence/welcome-real-light-1440x900.png), [mobile real light](design-research/welcome-evidence/welcome-real-light-390x844-indicator.png), [mobile real dark](design-research/welcome-evidence/welcome-real-dark-390x844-indicator.png): browser assertions put the pill inside the initial viewport at 1440×900 and 390×844. It tracks the real/demo toggle. |
 | Featured rotation and pause | **Passed** | [welcome-browser-results.json](design-research/welcome-evidence/welcome-browser-results.json): Playwright clock confirms rotation at 7.2 seconds and no change while hovered, focused, or hidden after `visibilitychange`. |
-| Reduced motion: system and in-app | **Passed** | [welcome-browser-results.json](design-research/welcome-evidence/welcome-browser-results.json): both paths assert no rotation, no running animations (`getAnimations()`), no transforms, and working Start. Reduced Start measured 192ms (system) / 138ms (in-app). |
+| Reduced motion: system and in-app | **Passed** | [welcome-browser-results.json](design-research/welcome-evidence/welcome-browser-results.json): both paths assert no rotation, no running animations (`getAnimations()`), no transforms, and working Start. Reduced Start measured 194ms (system) / 177ms (in-app). |
 | Keyboard-only path and focus | **Passed** | [welcome-browser-results.json](design-research/welcome-evidence/welcome-browser-results.json): first Tab reaches Start; arrows move tile focus; Enter opens that tile; Escape and Skip enter the library. [welcome-keyboard-focus.png](design-research/welcome-evidence/welcome-keyboard-focus.png) shows the focus ring. |
 | Demo privacy in network response and page state | **Passed** | [welcome-browser-results.json](design-research/welcome-evidence/welcome-browser-results.json), [run_welcome.py](tests/browser/run_welcome.py): demo response has no seeded real-chat marker; title, all text, expanded summaries, accessible names, descriptions and targets, tooltips, local/session storage also contain none. The demo page makes no search, chat, or filter API request before Start. |
-| Start to usable library | **Passed** | [welcome-browser-results.json](design-research/welcome-evidence/welcome-browser-results.json): measured with `performance.now()` at **455.8 ms**, target under 700 ms. |
-| Frame cadence at 24 tiles | **Passed** | [welcome-browser-results.json](design-research/welcome-evidence/welcome-browser-results.json): headless/CI-style Chromium measured **60.02 FPS** during hover and **60.04 FPS** during the Start transition. This is a headless measurement, not a laptop result. |
+| Start to usable library | **Passed** | [welcome-browser-results.json](design-research/welcome-evidence/welcome-browser-results.json): measured with `performance.now()` at **462 ms**, target under 700 ms. |
+| Frame cadence at 24 tiles | **Passed** | [welcome-browser-results.json](design-research/welcome-evidence/welcome-browser-results.json): headless/CI-style Chromium measured **60.01 FPS** during hover and **60.04 FPS** during the Start transition. This is a headless measurement, not a laptop result. |
 | Network audit | **Passed** | [welcome-browser-results.json](design-research/welcome-evidence/welcome-browser-results.json) contains every request event during load, rotation, and Start. All were to the run's loopback origin; the unique URL list and totals are calculated below from that JSON. |
 | Real-laptop frame rate | **Not run** | Headless CI cannot establish laptop performance. Use the DevTools instructions below for the real-world number. |
 | Original JPG overlay comparison | **Not run** | The supplied relative path `assets/brand/lake-handwriting-original.jpg` does not exist in this workspace. The available SVG comparison and stroke ratio are recorded above. |
@@ -39,25 +39,25 @@ Every browser request used the temporary loopback origin. The full event sequenc
 Programmatically counted from [welcome-browser-results.json](design-research/welcome-evidence/welcome-browser-results.json): **257 request events**, **19 distinct URLs**.
 
 ```text
-http://127.0.0.1:40565/api/card-progress
-http://127.0.0.1:40565/api/chat/ci-fictional-01
-http://127.0.0.1:40565/api/embedding-progress
-http://127.0.0.1:40565/api/filters
-http://127.0.0.1:40565/api/search?q=&sort=relevance&mode=hybrid&rerank=0&archived=0
-http://127.0.0.1:40565/api/welcome/tiles?demo=0
-http://127.0.0.1:40565/api/welcome/tiles?demo=1
-http://127.0.0.1:40565/static/app.js
-http://127.0.0.1:40565/static/brand/lake-wordmark.svg
-http://127.0.0.1:40565/static/enhancements.js
-http://127.0.0.1:40565/static/entry.js
-http://127.0.0.1:40565/static/fonts/dm-sans.woff2
-http://127.0.0.1:40565/static/fonts/fraunces.woff2
-http://127.0.0.1:40565/static/fonts/local-fonts.css
-http://127.0.0.1:40565/static/lake-loader.js
-http://127.0.0.1:40565/static/style.css
-http://127.0.0.1:40565/static/welcome.css
-http://127.0.0.1:40565/static/welcome.js
-http://127.0.0.1:40565/welcome
+http://127.0.0.1:38417/api/card-progress
+http://127.0.0.1:38417/api/chat/ci-fictional-01
+http://127.0.0.1:38417/api/embedding-progress
+http://127.0.0.1:38417/api/filters
+http://127.0.0.1:38417/api/search?q=&sort=relevance&mode=hybrid&rerank=0&archived=0
+http://127.0.0.1:38417/api/welcome/tiles?demo=0
+http://127.0.0.1:38417/api/welcome/tiles?demo=1
+http://127.0.0.1:38417/static/app.js
+http://127.0.0.1:38417/static/brand/lake-wordmark.svg
+http://127.0.0.1:38417/static/enhancements.js
+http://127.0.0.1:38417/static/entry.js
+http://127.0.0.1:38417/static/fonts/dm-sans.woff2
+http://127.0.0.1:38417/static/fonts/fraunces.woff2
+http://127.0.0.1:38417/static/fonts/local-fonts.css
+http://127.0.0.1:38417/static/lake-loader.js
+http://127.0.0.1:38417/static/style.css
+http://127.0.0.1:38417/static/welcome.css
+http://127.0.0.1:38417/static/welcome.js
+http://127.0.0.1:38417/welcome
 ```
 <!-- REQUEST_COUNTS_END -->
 
@@ -70,7 +70,7 @@ http://127.0.0.1:40565/welcome
 
 ## Issues found and fixed
 
-- Browser contrast sampling found the date/model metadata at **3.72:1** on one light tinted tile. The metadata now uses the stronger ink-soft token; the final minimum is **4.74:1** light and **6.93:1** dark.
+- Browser contrast sampling first found tile metadata at **3.72:1**, then summary text at **4.74:1**, on light tinted surfaces. The separate contrast fix uses the ink token for tile metadata, tags, and summaries; the final measured minimum is **6.93:1** in both themes.
 - The app-wide `.brand-mark{display:none}` rule hid the welcome SVG. The welcome component now has its own mark class and the browser test verifies it renders once.
 - Start-time module parsing made one headless transition sample fall below 60 FPS. The welcome page now preloads the local app module without evaluating it; no library API is requested before Start. The final headless transition sample measured 60.02 FPS.
 - The prior report's handwritten network totals disagreed with its URL list. The runner now derives request-event and distinct-URL counts and rewrites the complete URL list from `welcome-browser-results.json` on every successful run.
