@@ -36,7 +36,7 @@ def main() -> None:
                     svg = svg.replace("{{" + token + "}}", value)
                 opening_end = svg.index(">") + 1
                 svg = svg[:opening_end] + font_css + svg[opening_end:]
-                output = HERE.parent / f"{source.stem}-{theme}.svg"
+                output = HERE / f"{source.stem}-{theme}.svg"
                 output.write_text(svg, encoding="utf-8")
                 page = browser.new_page(viewport={"width": width, "height": height}, device_scale_factor=2)
                 page.set_content(f'<!doctype html><style>html,body{{margin:0;padding:0}}img{{display:block;width:{width}px;height:{height}px}}</style><img id="diagram" src="data:image/svg+xml;base64,'+

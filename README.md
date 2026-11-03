@@ -1,119 +1,107 @@
-![Lake handwritten wordmark](lake/static/brand/readme-header.svg)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="lake/static/brand/readme-header-dark.svg">
+  <img src="lake/static/brand/readme-header.svg" alt="Lake handwritten wordmark">
+</picture>
 
 # Lake
 
-Lake is local memory for your AI-assisted development history. It helps you retrieve prior problems, fixes, and decisions from your conversations, with a gallery-like visual library for browsing. It uses SQLite, Python, and a local NumPy memory-mapped vector index (or optional sqlite-vec). The server binds to `127.0.0.1` only. Ollama is contacted only for requested local generation and semantic queries/embedding jobs.
+Private, local-first gallery for your AI chats: searchable, visual, and ready to **continue from here**.
 
-## Run
+[![License: pending](https://img.shields.io/badge/license-pending-d9d6ce?labelColor=26332f)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-146b60)](https://www.python.org/)
 
-1. Install Python 3.11 or newer.
-2. Install the local vector fallback: `python -m pip install -r requirements.txt`. Optionally install the SQLite extension backend with `python -m pip install sqlite-vec`; Lake falls back to NumPy when the extension is unavailable.
-3. Copy `config.example.toml` to `config.toml` and adjust paths or Ollama settings if needed.
-4. Run `python -m lake` from this folder.
-5. Open <http://127.0.0.1:8765>.
+<p align="center">
+  <img src="docs/assets/readme/lake-walkthrough.gif" alt="Demo-only walkthrough of Lake's welcome wall, search, chat detail, and continue block" width="720">
+</p>
 
-Run `python -m lake doctor` for a first-run check of Python, SQLite/FTS, vector backends, Ollama connectivity, and configured model availability.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/welcome-dark.png">
+  <img src="docs/assets/readme/welcome-light.png" alt="Lake welcome wall filled with fictional demo chats" width="24%">
+</picture>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/search-dark.png">
+  <img src="docs/assets/readme/search-light.png" alt="Lake hybrid search results for a fictional query" width="24%">
+</picture>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/chat-dark.png">
+  <img src="docs/assets/readme/chat-light.png" alt="Lake chat detail with a fictional continue-from-here card" width="24%">
+</picture>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/palette-dark.png">
+  <img src="docs/assets/readme/palette-light.png" alt="Lake command palette in a fictional demo library" width="24%">
+</picture>
 
-The SQLite database is created at `./data/lake.db`. SQLite FTS5 is required and is included in most standard Python SQLite builds. Semantic vectors are stored in SQLite; NumPy provides the default memory-mapped cosine search backend. The app itself makes no remote calls. Ollama requests are restricted to a local URL. To import every supported file in the configured import folder from a command line, run `python -m lake import-folder` (or pass a folder path).
+## What you get
 
-## Welcome gallery
+- Import ChatGPT, Claude, Markdown, text, or pasted transcripts.
+- Browse a calm, visual wall of conversations.
+- Search by keyword, meaning, or both.
+- Keep everything in a local SQLite database.
+- Turn a long chat into a compact context block.
+- Continue in any AI tool without losing the thread.
+- Connect coding agents through a read-only local MCP server.
 
-Lake opens on `/welcome` by default. **Start** enters the library; the **Show welcome on launch** preference controls whether a new browser session starts there. The welcome gallery calls the read-only `/api/welcome/tiles` endpoint, which returns only a chat id, title, one-line card summary, model, date, tags, and project. The endpoint caps responses at 24, excludes archived chats, scans message text server-side to exclude secret-flagged chats, and returns fictional entries for demo mode or when fewer than six eligible summaries exist. Demo mode is requested with `?demo=1`; in that mode no real chat data is serialized to the browser.
+## How it works
 
-The desktop wall is the hero: one compact headline band and Start sit above an eight-column CSS grid with `grid-auto-flow: dense`. A 1×1 square occupies 2 columns × 2 grid rows; a 2×1 wide tile occupies 4 × 2; a 1×2 tall tile occupies 2 × 4. The featured tile is 2×2 (4 × 4 grid tracks). Remaining tiles follow the deterministic `square, wide, tall, square, wide, square, tall, square` pattern. CSS and `lake/static/welcome.js` document the spans; tune them together to keep the dense mosaic predictable. `TAG_HUES` maps the first tag to six hues: teal (design/maps/ux), blue (debugging/accessibility/web/css), violet (sql/architecture/sqlite/privacy), rust (python/jobs/imports/reliability), olive (search/embeddings/performance), and berry (mobile/storage/retrieval). Unmapped tags use a stable hash of project and tag. Every sixth mosaic position is an inverted solid tile. On narrow screens, every tile becomes a single-column stream item, preferences collapse behind a 44px disclosure beside the visible Demo toggle, and Start stays fixed above the device safe area. The featured chat changes every 7.2 seconds in Full motion and pauses while the wall is hovered/focused or the page is hidden. System or in-app Reduced motion keeps the first featured chat static.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/architecture-dark.svg">
+  <img src="docs/diagrams/architecture-light.svg" alt="Hand-drawn Lake data flow from exports and pasted chats through local SQLite and merged search to the UI and read-only MCP">
+</picture>
 
-Welcome eligibility performs server-side secret scans on demand. Scan results are cached in a bounded process-local cache using only each chat's content hash and boolean result; imports invalidate the old digest when transcript content changes. Candidate scans stop as soon as the requested number of eligible chats (up to 24) has been collected.
+Search fuses SQLite FTS5 keyword matches with local vector results. Cards and context blocks are generated only when you ask, through your local Ollama endpoint. The diagram and PNG fallbacks are reproducibly built from [docs/diagrams/src/](docs/diagrams/src/).
 
-The welcome page reuses Lake's local DM Sans/Fraunces fonts, CSS tokens, hand-drawn L loader, and header mark. It adds no libraries or remote assets. Chat summaries remain local; demo mode replaces the server response as well as the rendered and accessible card text.
+## Privacy
 
-## Import
+- Everything stays on your machine, including chats, cards, indexes, and jobs.
+- Lake has no telemetry or hosted API.
+- Read-only MCP uses local stdio and redacts detected secrets by default.
 
-Use **Import** in the app to upload `conversations.json`, `.md`, `.txt`, or `.json` files. ChatGPT exports may be selected as a folder or as `conversations.json`; Claude exports may be selected as JSON. You can also paste a transcript. Recognized `User:` / `Assistant:` markers split into messages; unmarked text is preserved as one message. Files are parsed in source-specific modules in `lake/parsers/`.
+See [docs/privacy.md](docs/privacy.md) for boundaries and redaction details.
 
-The importer reports added, updated, skipped, and failed items. Re-importing identical content is idempotent. The original message text is retained as imported.
-
-## Ollama
-
-Install and start Ollama separately for cards, context, and semantic search. Pull `qwen2.5:3b` and `nomic-embed-text` locally. Set `ollama_url`, `model`, and `embedding_model` in `config.toml`; change `model` there to switch chat models. `num_ctx` (default 8192) is sent explicitly to Ollama for card generation, transcript summaries, context generation, and reranking. Long transcripts are summarized in ordered chunks sized for that context window, then summaries are reduced in order before card generation so later conversation sections are retained. For multilingual chat collections, set `embedding_model = "bge-m3"` and pull that model. New imports and ready cards are embedded in a durable background queue; progress and failed-job retries appear above the library. Switching models marks the previous vectors stale and schedules the current model. Searches never combine models. Card and embedding prompts treat transcript text as untrusted data.
-
-## Semantic search
-
-The search selector supports **Keyword**, **Semantic**, and **Hybrid** (default). Hybrid runs FTS5 and local vector retrieval together, then merges chat ranks with reciprocal rank fusion. Source, model, project, tag, date, pin, and archive filters apply in every mode. An optional **Local rerank** asks the configured Ollama chat model to rerank the top 20; its latency is shown with the result count.
-
-Each chat is split into approximate 400-token user/reply chunks with overlap for long messages, plus a separate vector for a ready card. Small fenced code blocks stay together. `sqlite-vec` is used when installed and loadable; otherwise normalized float32 vectors are searched with NumPy over a memory-mapped matrix. The default cache is `./data/vector-cache`. **Find similar chats** uses a card vector. **Find duplicate problems** compares card vectors above `duplicate_similarity_threshold`; for predictable local memory use it scans at most `duplicate_scan_limit` cards per request and indicates when that cap applies.
-
-Run `python evaluate_semantic.py` with Ollama running and the configured embedding model available to compute recall@5 for the bundled 20-query sample set. Run `python benchmark_semantic.py` to reproduce warmed vector-query latency over 100,000 768-dimensional vectors. The recorded measurements are in [reports/semantic_benchmark.md](reports/semantic_benchmark.md); they exclude Ollama query embedding time.
-
-## Read-only MCP server
-
-Lake exposes its existing chats to coding agents through the official Python MCP SDK over **stdio**. The MCP process opens the existing database using SQLite URI `mode=ro`; it does not run migrations or expose an HTTP listener. Keyword search works without Ollama. Hybrid and semantic search send query embeddings only to the configured local Ollama URL. Start the process from the Lake repository folder:
+## Quick start
 
 ```powershell
-python -m lake.mcp_server --config C:\path\to\config.toml
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+Copy-Item config.example.toml config.toml
+python -m lake
 ```
 
-Install dependencies with `python -m pip install -r requirements.txt`. From the Lake repository folder, register it with Claude Code:
+Open <http://127.0.0.1:8765>, then import an export from **Import**. For Ollama setup and configuration options, see [docs/ollama.md](docs/ollama.md).
+
+## Models
+
+| Model | Role | License |
+|---|---|---|
+| `qwen2.5:3b` | Local cards and context | Qwen license |
+| `nomic-embed-text` | Local embeddings | Apache-2.0 |
+| `bge-m3` | Optional multilingual embeddings | MIT |
+
+Model weights are not distributed by Lake; download them through Ollama.
+
+## Roadmap
+
+- [x] Local import, dedupe, cards, and hybrid search
+- [x] Welcome wall and continue-from-here blocks
+- [x] Read-only MCP over stdio
+- [ ] More export parsers
+- [ ] Better local model setup guidance
+
+## Build the visuals
 
 ```powershell
-claude mcp add --transport stdio lake -- python -m lake.mcp_server --config "C:\path\to\config.toml"
+python docs/diagrams/build.py
 ```
 
-For another MCP client, use an equivalent stdio server entry (launch it with Lake's repository as its working directory):
+The diagrams use hand-drawn SVG templates, embed the locally vendored OFL font, and render 2× PNG fallbacks in Chrome. README screenshots and the demo-only walkthrough are captured with the fictional browser harness described in [docs/testing.md](docs/testing.md).
 
-```json
-{
-  "mcpServers": {
-    "lake": {
-      "command": "python",
-      "args": ["-m", "lake.mcp_server", "--config", "C:\\path\\to\\config.toml"]
-    }
-  }
-}
-```
+## Docs
 
-The tools are `search_chats`, `get_card`, `get_context_block`, `get_chat_excerpt`, `list_projects`, and `list_tags`. Search defaults to hybrid and returns at most 10 chats (5 by default); excerpts are limited to 20 messages. Every response is capped at about 4,000 tokens. Results include an explicit untrusted historical-data notice and delimiters; zero-width/bidi controls are stripped and detected secrets are redacted by default. Historical content is never interpreted as instructions. Verify old solutions before applying them.
+[Architecture](docs/architecture.md) · [Imports](docs/imports.md) · [Ollama](docs/ollama.md) · [MCP](docs/mcp.md) · [Privacy](docs/privacy.md) · [Testing](docs/testing.md)
 
-Configure `mcp_redact_secrets = true` (default) to redact detected credentials. Set `mcp_allowed_projects = ["Project A"]` to restrict all search and detail tools to named projects; `[]` means all projects. Archived chats are always excluded. Each tool call is appended to `mcp_audit_log` with timestamp, bounded arguments, success/error, and result size. `mcp_requests_per_minute` defaults to 60. Review the JSONL audit file locally. The MCP server itself has no network transport and cannot write to the SQLite database.
+## License
 
-## Data and privacy
+**License pending:** see [LICENSE](LICENSE).
 
-Lake stores chats, FTS indexes, embeddings, and durable embedding jobs in SQLite, uses no telemetry, and makes no remote calls. Ollama URLs are restricted to loopback. The optional secret warning scans for common key patterns and high-entropy strings; it only adds a warning badge and never edits content. Imported markdown is escaped before display. Search filters include source, model, project, tag, date range, pinned, and archived. `Ctrl/Cmd+K` focuses search.
-
-Use `python -m lake backup` for a database copy plus Markdown and JSON exports under `backups/`. Context blocks can be copied from a card or generated from the full transcript; the configured target is approximate because token estimation is local and heuristic.
-
-When opening an existing database with an older schema, Lake creates a consistent SQLite backup beside it (for example, `lake.db.pre-migration-v3.bak`) before applying migrations. Existing backups are preserved; a numbered suffix is used if that path already exists.
-
-## Visual design
-
-The static frontend uses vanilla JavaScript ES modules and CSS; it adds no framework or build step. The visual tokens and responsive component styles live in `lake/static/style.css`. The UI uses a warm-paper light theme and an ink dark theme, with a restrained teal accent. The initial theme follows the operating-system preference; a user selection is saved locally. Reduced motion is available in the footer and the CSS also honors `prefers-reduced-motion`.
-
-DM Sans (UI), Fraunces (display), and a Noto Sans Arabic subset are served from `lake/static/fonts/`. These files are locally vendored WOFF2 assets with their SIL Open Font License texts in `lake/static/fonts/licenses/`. The font CSS selects Latin subsets for the UI/display fonts and Arabic glyphs for Arabic messages. No font CDN or other runtime asset host is used. No animation library is included.
-
-The primary page keeps the full search and filters visible. `Ctrl/Cmd+K` opens a separate action and quick-jump palette. The intro is shown for an empty library and can also be opened from `/welcome`; the component catalogue is at `/design-system`. Search result cards include source/model/date, embedding model, a bounded marked excerpt, and the structured card summary when available. Older results are flagged as historical; check current versions before applying a solution. Search remains available when reduced motion is active. The palette backup action displays the existing local backup command (`python -m lake backup`); the frontend does not add a new backup endpoint.
-
-The original 3D gallery remains out of this phase. The inspiration study, captures, and any local recordings stay under `design-research/`, which is ignored by Git.
-
-## Extension points
-
-Core operations live in the `lake/` library layer, separate from the HTTP/UI and MCP transport layers. The MCP interface is strictly read-only.
-
-## Development
-
-Run the test suite with `python -m unittest discover -s tests -v`. Tests cover parsers, import deduplication, chunking, resumable embedding jobs, model staleness, FTS and vector search, RRF, similar chats, duplicates, card validation, and context size. `python -m lake --seed` loads the five fake sample chats. Demo exports are in `demo/`.
-
-
-## Lake brand and loading states
-
-The hand-drawn Lake assets are under `lake/static/brand/`, traced from the clean handwritten reference image supplied for this revision. Visit `/design-system#logo` for light and dark variants, 16/32/64/256 px monogram previews, and sizing/clear-space guidance. `LakeLoader` is available as a custom element and as the `lakeLoader()` inline-SVG function.
-
-Loader use checklist:
-
-- First-run startup overlay: once per session, skippable.
-- Search and filter results: small L after 200 ms; result-card placeholders are static.
-- Chat detail fetch.
-- Import: per-file/paste progress, reported as processed items.
-- Embedding: determinate from the server's embedded/total counts.
-- Continue-block generation: indeterminate while polling the local job.
-- Card-generation queue: indeterminate while the server reports pending cards; no per-job fraction exists in the current endpoint.
-
-Backup/export and button actions do not currently expose an observable async progress state. Command palette filtering is synchronous local work, so it has no loading indicator. Loading indicators have not been added to those flows.
+**Brand note:** the Lake name, wordmark, and visual identity are reserved; see [LICENSE-BRAND.md](LICENSE-BRAND.md).
