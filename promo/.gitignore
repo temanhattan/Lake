@@ -1,0 +1,8 @@
+node_modules/
+out/
+renders/
+captures/
+tmp/
+*.mp4
+*.webm
+*.gif

@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img"
+     aria-labelledby="title description">
+  <title id="title">Original Lake promo character rig</title>
+  <desc id="description">Layered marker drawings of Ripple and the Re-explainer.</desc>
+  <defs>
+    <style>
+      .ink{fill:none;stroke:#26332f;stroke-width:9;stroke-linecap:round;stroke-linejoin:round}
+      .fill-ink{fill:#26332f}
+      .paper{fill:#f7f4eb}
+      .teal{fill:#71cabb}
+      .coral{fill:#e58f70}
+      .gold{fill:#e9c66b}
+      .lavender{fill:#b5a7d6}
+    </style>
+  </defs>
+
+  <!-- Ripple: every visible part is named so poses can be recomposed. -->
+  <g id="ripple" transform="translate(80 80)">
+    <g id="ripple-body">
+      <path id="ripple-body-fill" class="teal ink"
+        d="M170 264 C111 265 76 225 83 165 C89 111 121 73 170 40
+           C219 73 251 111 257 165 C264 225 229 265 170 264Z"/>
+      <path id="ripple-l-motif" class="ink"
+        d="M169 93 C158 121 158 153 160 183 C161 204 151 220 137 221
+           C126 222 122 210 128 201 C135 190 150 193 159 203"/>
+    </g>
+    <g id="ripple-brows" class="ink">
+      <path id="ripple-brow-left" d="M119 137 Q135 126 148 136"/>
+      <path id="ripple-brow-right" d="M185 136 Q201 126 215 137"/>
+    </g>
+    <g id="ripple-eyes" class="fill-ink">
+      <ellipse id="ripple-eye-left" cx="137" cy="157" rx="7" ry="10"/>
+      <ellipse id="ripple-eye-right" cx="199" cy="157" rx="7" ry="10"/>
+    </g>
+    <path id="ripple-mouth" class="ink" d="M151 184 Q169 199 188 183"/>
+    <g id="ripple-arms" class="ink">
+      <path id="ripple-arm-left" d="M94 190 Q59 208 51 239"/>
+      <path id="ripple-arm-right" d="M246 190 Q281 208 289 239"/>
+    </g>
+    <g id="ripple-feet" class="gold ink">
+      <path id="ripple-foot-left" d="M126 253 Q116 281 94 286 Q121 298 143 278"/>
+      <path id="ripple-foot-right" d="M214 253 Q224 281 246 286 Q219 298 197 278"/>
+    </g>
+  </g>
+
+  <!-- The Re-explainer: a deliberately generic, non-portrait stick figure. -->
+  <g id="re-explainer" transform="translate(515 85)">
+    <g id="re-head">
+      <path id="re-hair" class="ink fill-ink"
+        d="M91 83 Q77 49 103 29 Q123 4 153 24 Q177 5 197 32
+           Q226 27 237 58 L221 76 Q193 57 164 62 Q128 55 91 83Z"/>
+      <ellipse id="re-face" class="paper ink" cx="162" cy="111" rx="73" ry="72"/>
+    </g>
+    <g id="re-eyes" class="fill-ink">
+      <path id="re-eye-left" d="M126 111 Q137 104 148 111 L143 116 Q134 112 127 117Z"/>
+      <path id="re-eye-right" d="M176 111 Q187 104 198 111 L193 116 Q184 112 177 117Z"/>
+    </g>
+    <g id="re-brows" class="ink">
+      <path id="re-brow-left" d="M124 97 Q137 88 150 96"/>
+      <path id="re-brow-right" d="M176 96 Q189 88 202 97"/>
+    </g>
+    <path id="re-mouth" class="ink" d="M143 143 Q163 134 184 144"/>
+    <g id="re-body">
+      <path id="re-torso" class="paper ink" d="M162 183 L161 375"/>
+      <path id="re-arm-left" class="ink" d="M160 214 Q107 247 80 310"/>
+      <path id="re-arm-right" class="ink" d="M164 214 Q216 246 245 304"/>
+      <path id="re-leg-left" class="ink" d="M161 374 Q124 438 104 504"/>
+      <path id="re-leg-right" class="ink" d="M162 374 Q204 438 225 504"/>
+      <path id="re-shoe-left" class="ink" d="M99 503 Q83 516 77 529 Q98 533 119 521"/>
+      <path id="re-shoe-right" class="ink" d="M224 503 Q240 516 246 529 Q225 533 204 521"/>
+    </g>
+    <g id="re-accessory">
+      <path id="re-notebook" class="coral ink" d="M47 302 L91 286 L109 335 L65 351Z"/>
+      <path id="re-notebook-line" class="ink" d="M63 307 L88 298"/>
+    </g>
+  </g>
+</svg>
