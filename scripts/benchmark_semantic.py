@@ -1,8 +1,12 @@
 """Warmed NumPy memmap query benchmark at 100k vectors (default 768 dims)."""
 import statistics
+import sys
 import tempfile
 import time
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 
 import numpy as np
 

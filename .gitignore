@@ -4,3 +4,17 @@ config.toml
 data/
 backups/
 design-research/
+.env
+.env.*
+!.env.example
+*.db
+*.sqlite
+*.sqlite3
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+node_modules/
+playwright-report/
+test-results/

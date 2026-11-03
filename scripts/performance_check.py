@@ -1,5 +1,10 @@
 """Run the requested local FTS timing check: 5,000 chats / 100,000 messages."""
 import time
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from lake.db import connect
 from lake.library import search
 

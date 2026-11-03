@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title desc">
+  <title id="title">Lake stays on your machine</title><desc id="desc">Exports and pasted chats are imported and deduplicated into local SQLite. Keyword and semantic search feed the local interface and read-only MCP.</desc>
+  <rect width="1200" height="700" fill="{{paper}}"/>
+  <g fill="none" stroke="{{ink}}" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M48 112 Q49 105 60 107 L1140 104 Q1153 106 1152 119 L1148 638 Q1144 647 1132 645 L58 651 Q47 647 48 635Z" stroke="{{teal}}" stroke-width="4" stroke-dasharray="17 10 4 10"/>
+    <path d="M55 116 Q62 109 70 114 M1138 110 Q1147 110 1147 122 M51 631 Q52 642 66 643" stroke-width="2" opacity=".42"/>
+    <path d="M80 212 Q80 202 93 203 L260 199 Q270 202 269 215 L266 304 Q263 313 251 312 L91 316 Q80 313 81 303Z" fill="{{surface}}" stroke-width="3"/>
+    <path d="M322 212 Q322 202 335 203 L510 200 Q521 203 519 216 L517 304 Q514 313 502 312 L333 315 Q321 312 323 302Z" fill="{{surface}}" stroke-width="3"/>
+    <path d="M570 196 Q571 186 584 187 L775 184 Q786 187 784 200 L781 319 Q779 329 766 328 L581 331 Q570 328 571 316Z" fill="{{teal}}" stroke="{{teal}}" stroke-width="4"/>
+    <path d="M834 212 Q835 202 848 203 L1090 200 Q1100 203 1099 216 L1096 303 Q1093 313 1081 312 L844 315 Q833 312 834 301Z" fill="{{surface}}" stroke-width="3"/>
+    <path d="M105 455 Q106 445 119 446 L351 442 Q362 445 360 458 L357 548 Q354 558 342 557 L116 560 Q104 557 105 545Z" fill="{{surface}}" stroke-width="3"/>
+    <path d="M444 455 Q445 445 458 446 L694 443 Q705 446 703 459 L700 547 Q697 557 685 556 L455 560 Q443 557 444 545Z" fill="{{surface}}" stroke-width="3"/>
+    <path d="M779 455 Q780 445 793 446 L1072 443 Q1082 446 1081 459 L1078 547 Q1075 557 1063 556 L790 560 Q778 557 779 545Z" fill="{{surface}}" stroke-width="3"/>
+    <path d="M269 256 C288 256 297 256 320 256 M520 256 C540 256 548 256 569 256 M785 256 C804 256 814 256 833 256 M652 330 C652 377 233 375 233 440 M652 330 C652 378 565 387 565 442 M652 330 C652 375 930 378 930 442 M360 502 C390 502 414 502 442 502 M703 502 C730 502 750 502 778 502" stroke="{{teal}}" stroke-width="4"/>
+    <path d="M307 247 l13 9 -13 8 M555 247 l13 9 -13 8 M819 247 l13 9 -13 8 M433 494 l10 8 -10 8 M769 494 l10 8 -10 8" stroke="{{teal}}" stroke-width="4"/>
+    <path d="M600 171 C617 151 675 151 697 171" stroke="{{paper}}" stroke-width="2" opacity=".65"/>
+  </g>
+  <g fill="{{ink}}" font-family="LakeSans, sans-serif" font-size="25" text-anchor="middle">
+    <text x="175" y="249">Exports</text><text x="175" y="282">+ paste</text>
+    <text x="421" y="249">Import</text><text x="421" y="282">+ dedupe</text>
+    <text x="677" y="242" fill="{{paper}}" font-size="29">SQLite</text><text x="677" y="279" fill="{{paper}}" font-size="20">chats · cards · vectors</text>
+    <text x="966" y="249">Search</text><text x="966" y="282">FTS + vectors</text>
+    <text x="232" y="497">Local UI</text><text x="232" y="530" font-size="19">gallery + search</text>
+    <text x="574" y="497">Merged ranks</text><text x="574" y="530" font-size="19">keyword + meaning</text>
+    <text x="930" y="497">Read-only MCP</text><text x="930" y="530" font-size="19">stdio · local DB</text>
+  </g>
+  <text x="600" y="608" fill="{{teal}}" font-family="LakeSans, sans-serif" font-size="24" text-anchor="middle">STAYS ON YOUR MACHINE</text>
+  <path d="M482 620 Q600 628 718 618" fill="none" stroke="{{teal}}" stroke-width="3" stroke-linecap="round"/>
+</svg>

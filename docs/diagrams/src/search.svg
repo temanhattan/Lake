@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" role="img" aria-labelledby="title desc">
+  <title id="title">Lake search pipeline</title><desc id="desc">A query flows through full-text and vector search, rank fusion, and chat results with snippets.</desc>
+  <rect width="1200" height="480" fill="{{paper}}"/>
+  <g fill="none" stroke="{{ink}}" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M70 164 Q71 153 84 154 L235 151 Q247 154 245 168 L242 294 Q240 305 226 304 L81 307 Q69 304 70 292Z" fill="{{surface}}" stroke-width="3"/>
+    <path d="M320 82 Q321 72 334 73 L516 70 Q527 73 525 87 L522 184 Q519 194 507 193 L331 196 Q319 193 321 181Z" fill="{{surface}}" stroke-width="3"/>
+    <path d="M320 274 Q321 264 334 265 L516 262 Q527 265 525 279 L522 376 Q519 386 507 385 L331 388 Q319 385 321 373Z" fill="{{surface}}" stroke-width="3"/>
+    <path d="M615 165 Q616 155 629 156 L797 153 Q808 156 806 170 L803 294 Q801 304 788 303 L626 306 Q614 303 616 291Z" fill="{{teal}}" stroke="{{teal}}" stroke-width="4"/>
+    <path d="M891 124 Q892 114 905 115 L1126 112 Q1137 115 1135 129 L1132 328 Q1129 338 1117 337 L902 340 Q890 337 892 325Z" fill="{{surface}}" stroke-width="3"/>
+    <path d="M246 230 C273 230 292 230 318 230 M525 130 C559 130 572 179 614 209 M525 328 C559 328 572 278 614 246 M806 230 C838 230 858 230 890 230" stroke="{{teal}}" stroke-width="4"/>
+    <path d="M304 222 l13 8 -13 8 M600 200 l14 9 -15 6 M600 240 l14 7 -15 8 M875 222 l13 8 -13 8" stroke="{{teal}}" stroke-width="4"/>
+    <path d="M916 164 Q1004 161 1108 164 M916 209 Q1010 206 1080 209 M916 263 Q995 260 1108 263 M916 307 Q1015 304 1077 307" stroke="{{teal}}" stroke-width="3" opacity=".62"/>
+  </g>
+  <g fill="{{ink}}" font-family="LakeSans, sans-serif" font-size="26" text-anchor="middle">
+    <text x="158" y="222">Query</text><text x="158" y="259" font-size="19">“the fix I recall”</text>
+    <text x="423" y="125">FTS5</text><text x="423" y="162" font-size="19">keyword ranks</text>
+    <text x="423" y="317">Vector search</text><text x="423" y="354" font-size="19">local meaning</text>
+    <text x="710" y="220" fill="{{paper}}">Rank fusion</text><text x="710" y="255" fill="{{paper}}" font-size="19">reciprocal ranks</text>
+    <text x="1012" y="150">Chat results</text><text x="1012" y="194" font-size="19">title + snippet</text><text x="1012" y="291" font-size="19">project + date</text>
+  </g>
+</svg>

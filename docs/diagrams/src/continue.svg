@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
+  <title id="title">Continue from here with compact context</title><desc id="desc">A conversation becomes a reusable card, then a compact context block for any AI. The diagram shows the illustrative target length is shorter than the full chat.</desc>
+  <rect width="1200" height="520" fill="{{paper}}"/>
+  <g fill="none" stroke="{{ink}}" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M61 106 Q62 96 75 97 L304 94 Q315 97 313 111 L310 233 Q308 243 295 242 L72 245 Q60 242 62 230Z" fill="{{surface}}" stroke-width="3"/>
+    <path d="M430 106 Q431 96 444 97 L664 94 Q675 97 673 111 L670 233 Q668 243 655 242 L441 245 Q429 242 431 230Z" fill="{{teal}}" stroke="{{teal}}" stroke-width="4"/>
+    <path d="M792 106 Q793 96 806 97 L1124 94 Q1135 97 1133 111 L1130 233 Q1128 243 1115 242 L803 245 Q791 242 793 230Z" fill="{{surface}}" stroke-width="3"/>
+    <path d="M314 169 C356 169 383 169 429 169 M674 169 C716 169 749 169 791 169" stroke="{{teal}}" stroke-width="4"/>
+    <path d="M416 161 l14 8 -14 8 M778 161 l14 8 -14 8" stroke="{{teal}}" stroke-width="4"/>
+    <path d="M890 354 Q891 344 904 345 L1117 342 Q1128 345 1126 359 L1123 447 Q1121 457 1108 456 L901 459 Q889 456 891 444Z" fill="{{teal}}" stroke="{{teal}}" stroke-width="3"/>
+    <path d="M930 383 Q1000 380 1085 383 M930 414 Q1000 411 1075 414" stroke="{{paper}}" stroke-width="3" opacity=".76"/>
+    <path d="M870 306 C880 326 929 334 968 343" stroke="{{teal}}" stroke-width="3" stroke-dasharray="8 8"/>
+  </g>
+  <g fill="{{ink}}" font-family="LakeSans, sans-serif" font-size="27" text-anchor="middle">
+    <text x="187" y="153">Conversation</text><text x="187" y="197" font-size="20">full transcript</text>
+    <text x="552" y="153" fill="{{paper}}">Lake card</text><text x="552" y="197" fill="{{paper}}" font-size="20">problem · fix · result</text>
+    <text x="963" y="153">Context block</text><text x="963" y="197" font-size="20">ready to continue</text>
+    <text x="1007" y="379" fill="{{paper}}" font-size="19">Paste into any AI</text>
+    <text x="78" y="312" text-anchor="start" font-size="19">Length · illustrative targets</text>
+    <text x="80" y="365" text-anchor="start" font-size="19">Full chat</text><text x="80" y="420" text-anchor="start" font-size="19">Context</text>
+  </g>
+  <g fill="none" stroke="{{ink}}" stroke-linecap="round">
+    <path d="M205 359 H839 Q847 361 841 373 H205Z" fill="{{ink}}" stroke-width="2" opacity=".82"/>
+    <path d="M205 414 H374 Q382 416 376 428 H205Z" fill="{{teal}}" stroke="{{teal}}" stroke-width="2"/>
+  </g>
+  <text x="603" y="485" fill="{{muted}}" font-family="LakeSans, sans-serif" font-size="16" text-anchor="middle">Illustration only — actual token counts are measured per chat</text>
+</svg>

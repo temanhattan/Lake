@@ -4,7 +4,11 @@ This script requires a running, local Ollama server and the configured embedding
 It embeds missing sample chats through Lake's durable queue before scoring queries.
 """
 import json
+import sys
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 
 from lake.config import load_config
 from lake.db import connect
@@ -25,7 +29,7 @@ def main():
         if failed:raise RuntimeError(f"{failed} embedding job(s) failed; check Ollama and model '{cfg.embedding_model}'")
         index=create_vector_index(db,cfg.vector_cache_path);queue.set_index(index)
         service=SemanticSearch(index,queue,cfg)
-        evaluations=json.loads((Path(__file__).parent/"evaluation"/"semantic_queries.json").read_text(encoding="utf-8"))
+        evaluations=json.loads((ROOT/"evaluation"/"semantic_queries.json").read_text(encoding="utf-8"))
         hits={mode:0 for mode in ("keyword","semantic","hybrid")};details=[]
         for item in evaluations:
             expected=db.execute("SELECT id FROM chats WHERE source_id=?",(item["expected_source_id"],)).fetchone()

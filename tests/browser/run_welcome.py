@@ -184,7 +184,7 @@ def update_report_network_block(report_path):
     report["measurements"]["request_event_count"] = len(requests)
     report["measurements"]["distinct_request_url_count"] = len(urls)
     report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
-    markdown_path = ROOT / "WELCOME-VERIFICATION.md"
+    markdown_path = ROOT / "design-research" / "reports" / "WELCOME-VERIFICATION.md"
     markdown = markdown_path.read_text(encoding="utf-8")
     url_lines = "\n".join(f"{url}" for url in urls)
     block = ("<!-- REQUEST_COUNTS_START -->\n"
