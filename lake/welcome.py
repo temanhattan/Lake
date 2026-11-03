@@ -1,7 +1,25 @@
 """Curated, read-only data for the welcome gallery."""
+from collections import OrderedDict
+from threading import RLock
 from .library import secret_warning
 
 MAX_TILES = 24
+_SECRET_SCAN_CACHE = OrderedDict()
+_SECRET_SCAN_LOCK = RLock()
+_SECRET_SCAN_CACHE_SIZE = 8192
+
+
+def clear_secret_scan_cache():
+    """Clear process-local scan results (also used by isolated benchmarks)."""
+    with _SECRET_SCAN_LOCK:
+        _SECRET_SCAN_CACHE.clear()
+
+
+def invalidate_secret_scan(content_hash):
+    """Forget a scan when its source transcript changes or is replaced."""
+    if content_hash:
+        with _SECRET_SCAN_LOCK:
+            _SECRET_SCAN_CACHE.pop(content_hash, None)
 
 SAMPLE_TILES = [
     {"id": "sample-01", "title": "A map that remembers the way", "summary": "A local trail planner keeps its place between visits.", "model": "GPT-4o", "date": "2026-10-22", "tags": ["design", "maps"], "project": "Field Notes"},
@@ -26,11 +44,21 @@ def _one_line(value, limit=180):
     return text
 
 
-def _has_secret(db, chat_id):
-    # Always scan server-side for welcome eligibility, independently of the
-    # optional import warning preference. Transcript text never leaves SQLite.
+def _has_secret(db, chat_id, content_hash):
+    # Scan on demand for wall eligibility, regardless of the optional import
+    # warning preference. Cache only the content digest and boolean result.
+    with _SECRET_SCAN_LOCK:
+        if content_hash in _SECRET_SCAN_CACHE:
+            result = _SECRET_SCAN_CACHE.pop(content_hash)
+            _SECRET_SCAN_CACHE[content_hash] = result
+            return result
     messages = db.execute("SELECT content FROM messages WHERE chat_id=?", (chat_id,))
-    return secret_warning("\n".join(row[0] for row in messages))
+    result = secret_warning("\n".join(row[0] for row in messages))
+    with _SECRET_SCAN_LOCK:
+        _SECRET_SCAN_CACHE[content_hash] = result
+        while len(_SECRET_SCAN_CACHE) > _SECRET_SCAN_CACHE_SIZE:
+            _SECRET_SCAN_CACHE.popitem(last=False)
+    return result
 
 
 def _spread(candidates, limit):
@@ -63,10 +91,13 @@ def _spread(candidates, limit):
 
 def welcome_tiles(db, demo=False, limit=MAX_TILES):
     """Return only safe card metadata; demo and small-library paths are fictional."""
+    limit = min(MAX_TILES, max(0, int(limit)))
+    if limit == 0:
+        return []
     if demo:
         return [dict(tile) for tile in SAMPLE_TILES[:limit]]
 
-    rows = db.execute("""SELECT c.id,c.title,c.model_used,c.created_at,c.updated_at,
+    rows = db.execute("""SELECT c.id,c.title,c.model_used,c.created_at,c.updated_at,c.content_hash,
         c.imported_at,c.pinned,coalesce(p.name,'') project,
         coalesce(ca.problem,'') problem,coalesce(ca.result,'') result
         FROM chats c LEFT JOIN cards ca ON ca.chat_id=c.id
@@ -75,7 +106,7 @@ def welcome_tiles(db, demo=False, limit=MAX_TILES):
         ORDER BY c.pinned DESC, coalesce(c.created_at,c.updated_at,c.imported_at) DESC, c.id ASC""").fetchall()
     candidates = []
     for row in rows:
-        if _has_secret(db, row["id"]):
+        if _has_secret(db, row["id"], row["content_hash"]):
             continue
         tags = [item[0] for item in db.execute(
             "SELECT t.name FROM tags t JOIN chat_tags ct ON ct.tag_id=t.id WHERE ct.chat_id=? ORDER BY t.name",
@@ -87,7 +118,10 @@ def welcome_tiles(db, demo=False, limit=MAX_TILES):
             "model": row["model_used"] or "", "date": row["created_at"] or row["updated_at"] or "",
             "tags": tags, "project": row["project"], "pinned": row["pinned"],
         })
+        # Preserve the pin/recent ordering while bounding expensive scans.
+        if len(candidates) >= limit:
+            break
     if len(candidates) < 6:
         return [dict(tile) for tile in SAMPLE_TILES[:limit]]
-    selected = _spread(candidates, min(MAX_TILES, max(0, int(limit))))
+    selected = _spread(candidates, limit)
     return [{key: row[key] for key in ("id", "title", "summary", "model", "date", "tags", "project")} for row in selected]

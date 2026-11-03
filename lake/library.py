@@ -14,6 +14,7 @@ def content_hash(chat):
 
 
 def import_chats(db, chats):
+    from .welcome import invalidate_secret_scan
     report = {"added": 0, "updated": 0, "skipped": 0, "failed": [], "queued": [], "changed": []}
     for chat in chats:
         try:
@@ -30,6 +31,7 @@ def import_chats(db, chats):
                 report["skipped"] += 1; continue
             if row:
                 chat_id = row["id"]
+                invalidate_secret_scan(row["content_hash"])
                 db.execute("DELETE FROM messages WHERE chat_id=?", (chat_id,))
                 db.execute("UPDATE chats SET title=?,model_used=?,updated_at=?,content_hash=?,imported_at=? WHERE id=?",
                            (chat.get("title", "Untitled"), chat.get("model_used"), chat.get("updated_at"), digest, now, chat_id))

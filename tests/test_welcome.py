@@ -1,16 +1,18 @@
 import io
 import json
 import unittest
+from unittest.mock import patch
 from email.message import Message
 
 from lake.config import Config
 from lake.db import connect
 from lake.web import Handler
-from lake.welcome import SAMPLE_TILES
+from lake.welcome import SAMPLE_TILES, clear_secret_scan_cache, _SECRET_SCAN_CACHE
 
 
 class WelcomeEndpointTests(unittest.TestCase):
     def setUp(self):
+        clear_secret_scan_cache()
         self.handler = object.__new__(Handler)
         self.handler.db = connect(":memory:")
         self.handler.config = Config()
@@ -75,7 +77,10 @@ class WelcomeEndpointTests(unittest.TestCase):
             self.add_chat(f"safe-{i}", f"Safe fictional chat {i}")
         self.add_chat("never-scanned", "Unscanned fake key chat",
                       content="api_key=FAKEKEY0123456789ABCDEFGHIJK")
-        response = self.get_tiles()
+        from lake.library import secret_warning
+        with patch("lake.welcome.secret_warning", wraps=secret_warning) as scanned:
+            response = self.get_tiles()
+        self.assertTrue(any("FAKEKEY0123456789ABCDEFGHIJK" in call.args[0] for call in scanned.call_args_list))
         ids = {tile["id"] for tile in response}
         self.assertNotIn("never-scanned", ids)
         self.assertEqual(ids, {f"safe-{i}" for i in range(6)})
@@ -89,6 +94,37 @@ class WelcomeEndpointTests(unittest.TestCase):
         self.assertEqual(response[1]["id"], "chat-05")
         self.assertTrue(all(set(tile) == {"id", "title", "summary", "model", "date", "tags", "project"} for tile in response))
         self.assertGreater(len({tile["project"] for tile in response}), 1)
+
+    def test_secret_scans_stop_after_24_eligible_chats_and_cache_by_content_hash(self):
+        for i in range(30):
+            self.add_chat(f"scan-{i:02}", f"Scan candidate {i:02}", project=f"Project {i % 6}", tag=f"tag-{i % 8}")
+        from lake.library import secret_warning
+        with patch("lake.welcome.secret_warning", wraps=secret_warning) as scanned:
+            first = self.get_tiles()
+            self.assertEqual(len(first), 24)
+            self.assertEqual(scanned.call_count, 24)
+            self.get_tiles()
+            self.assertEqual(scanned.call_count, 24, "warm response should reuse digest-keyed scan results")
+
+    def test_import_change_invalidates_previous_secret_scan_hash(self):
+        from lake.library import content_hash, import_chats, secret_warning
+        for i in range(6):
+            self.add_chat(f"invalidate-{i}", f"Keep this note {i}")
+        db = self.handler.db
+        db.execute("UPDATE chats SET source='fixture',source_id='stable-id' WHERE id='invalidate-0'")
+        db.commit()
+        old_hash = db.execute("SELECT content_hash FROM chats WHERE id='invalidate-0'").fetchone()[0]
+        self.get_tiles()
+        self.assertIn(old_hash, _SECRET_SCAN_CACHE)
+        updated = {"source": "fixture", "source_id": "stable-id", "title": "Updated note",
+                   "model_used": "GPT-4.1", "created_at": "2026-10-20", "updated_at": "2026-10-21",
+                   "messages": [{"role": "user", "content": "The note has a new safe transcript."}]}
+        import_chats(db, [updated])
+        new_hash = content_hash(updated)
+        self.assertNotEqual(old_hash, new_hash)
+        self.assertNotIn(old_hash, _SECRET_SCAN_CACHE)
+        self.get_tiles()
+        self.assertIn(new_hash, _SECRET_SCAN_CACHE)
 
 
 if __name__ == "__main__":
