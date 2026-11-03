@@ -16,6 +16,14 @@ Run `python -m lake doctor` for a first-run check of Python, SQLite/FTS, vector 
 
 The SQLite database is created at `./data/lake.db`. SQLite FTS5 is required and is included in most standard Python SQLite builds. Semantic vectors are stored in SQLite; NumPy provides the default memory-mapped cosine search backend. The app itself makes no remote calls. Ollama requests are restricted to a local URL. To import every supported file in the configured import folder from a command line, run `python -m lake import-folder` (or pass a folder path).
 
+## Welcome gallery
+
+Lake opens on `/welcome` by default. **Start** enters the library; the **Show welcome on launch** preference controls whether a new browser session starts there. The welcome gallery calls the read-only `/api/welcome/tiles` endpoint, which returns only a chat id, title, one-line card summary, model, date, tags, and project. The endpoint caps responses at 24, excludes archived chats, scans message text server-side to exclude secret-flagged chats, and returns fictional entries for demo mode or when fewer than six eligible summaries exist. Demo mode is requested with `?demo=1`; in that mode no real chat data is serialized to the browser.
+
+The desktop wall uses an eight-column CSS grid with `grid-auto-flow: dense`. A 1×1 square occupies 2 columns × 2 grid rows; a 2×1 wide tile occupies 4 × 2; a 1×2 tall tile occupies 2 × 4. The featured tile is 2×2 (4 × 4 grid tracks). Remaining tiles follow the deterministic `square, wide, tall, square, wide, square, tall, square` pattern. The fixed ordering and spans are documented beside the CSS grid and in `lake/static/welcome.js`; tune them together to keep the wall dense and predictable. On narrow screens, every tile becomes a single-column stream item and Start stays fixed above the device safe area. The featured chat changes every 7.2 seconds in Full motion and pauses while the wall is hovered/focused or the page is hidden. System or in-app Reduced motion keeps the first featured chat static.
+
+The welcome page reuses Lake's local DM Sans/Fraunces fonts, CSS tokens, hand-drawn L loader, and header mark. It adds no libraries or remote assets. Chat summaries remain local; demo mode replaces the server response as well as the rendered and accessible card text.
+
 ## Import
 
 Use **Import** in the app to upload `conversations.json`, `.md`, `.txt`, or `.json` files. ChatGPT exports may be selected as a folder or as `conversations.json`; Claude exports may be selected as JSON. You can also paste a transcript. Recognized `User:` / `Assistant:` markers split into messages; unmarked text is preserved as one message. Files are parsed in source-specific modules in `lake/parsers/`.

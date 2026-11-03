@@ -49,7 +49,14 @@ class Handler(BaseHTTPRequestHandler):
         return rows
     def do_GET(self):
         u=urllib.parse.urlsplit(self.path); path=u.path; q=urllib.parse.parse_qs(u.query)
-        if path in {"/","/welcome","/design-system"}: return self._send(200,(STATIC/"index.html").read_bytes(),"text/html; charset=utf-8")
+        if path in {"/","/welcome","/design-system"}:
+            page=(STATIC/"index.html").read_text(encoding="utf-8")
+            page=page.replace('content="width=device-width,initial-scale=1"','content="width=device-width,initial-scale=1,viewport-fit=cover"')
+            # Delay loading the search app until the entry module knows whether
+            # this is a welcome launch; demo mode must not fetch search results.
+            page=page.replace('<script type="module" src="/static/app.js"></script>','')
+            page=page.replace('<script type="module" src="/static/enhancements.js"></script>','<script type="module" src="/static/entry.js"></script>')
+            return self._send(200,page,"text/html; charset=utf-8")
         if path.startswith("/static/"):
             f=STATIC/path.removeprefix("/static/")
             if not f.resolve().is_relative_to(STATIC.resolve()) or not f.is_file(): return self._send(404,b"")

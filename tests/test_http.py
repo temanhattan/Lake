@@ -14,9 +14,11 @@ class HttpHandlerTests(unittest.TestCase):
     def response(self): return json.loads(self.h.wfile.getvalue())
     def test_page_import_search_and_reader(self):
         self.h.path="/"; self.h.do_GET(); self.assertIn(b"Lake",self.h.wfile.getvalue())
+        self.assertIn(b"/static/entry.js",self.h.wfile.getvalue())
+        self.assertNotIn(b"/static/app.js",self.h.wfile.getvalue())
         for path in ("/welcome","/design-system"):
             self.h.wfile=io.BytesIO(); self.h.path=path; self.h.do_GET()
-            self.assertIn(b"/static/enhancements.js",self.h.wfile.getvalue())
+            self.assertIn(b"/static/entry.js",self.h.wfile.getvalue())
         self.h.headers["Content-Type"]="application/json"; self.h.wfile=io.BytesIO()
         body=json.dumps({"filename":"Pasted transcript.txt","text":"User: keep a heliotrope phrase\nAssistant: saved"}).encode()
         self.h.rfile=io.BytesIO(body); self.h.headers["Content-Length"]=str(len(body)); self.h.path="/api/import"; self.h.do_POST()
