@@ -23,6 +23,34 @@ class Handler(BaseHTTPRequestHandler):
         if isinstance(body,str): body=body.encode("utf-8")
         self.send_response(status); self.send_header("Content-Type",content_type); self.send_header("Content-Length",str(len(body))); self.send_header("X-Content-Type-Options","nosniff"); self.send_header("Cache-Control","no-store"); self.end_headers(); self.wfile.write(body)
     def _json(self, obj, status=200): self._send(status,json.dumps(obj,ensure_ascii=False,default=str),"application/json; charset=utf-8")
+    def _local_origin(self, value):
+        try:
+            parsed=urllib.parse.urlsplit(value)
+            return parsed.scheme in {"http","https"} and parsed.hostname in {"localhost","127.0.0.1"} and parsed.port in {None,self.config.port}
+        except ValueError:
+            return False
+    def _request_security_error(self, state_changing=False):
+        host=self.headers.get("Host","")
+        try:
+            parsed=urllib.parse.urlsplit("//"+host)
+            valid_host=parsed.hostname in {"localhost","127.0.0.1"} and parsed.port in {None,self.config.port}
+        except ValueError:
+            valid_host=False
+        if not valid_host:
+            self._json({"error":"Unexpected Host header"},403)
+            return True
+        origin=self.headers.get("Origin")
+        referer=self.headers.get("Referer")
+        if origin is not None and not self._local_origin(origin):
+            self._json({"error":"Cross-origin request rejected"},403)
+            return True
+        if referer is not None and not self._local_origin(referer):
+            self._json({"error":"Cross-origin request rejected"},403)
+            return True
+        if state_changing and not (origin is not None or referer is not None):
+            self._json({"error":"Origin or Referer required"},403)
+            return True
+        return False
     def _body(self):
         n=int(self.headers.get("Content-Length",0)); return self.rfile.read(min(n,500_000_000))
     def _attach_result_tags(self, rows):
@@ -48,6 +76,8 @@ class Handler(BaseHTTPRequestHandler):
                 item["embedding_model"]=provenance["embedding_model"]
         return rows
     def do_GET(self):
+        security_error=self._request_security_error()
+        if security_error:return security_error
         u=urllib.parse.urlsplit(self.path); path=u.path; q=urllib.parse.parse_qs(u.query)
         if path in {"/","/welcome","/design-system"}:
             page=(STATIC/"index.html").read_text(encoding="utf-8")
@@ -109,6 +139,8 @@ class Handler(BaseHTTPRequestHandler):
             job_id=path.rsplit("/",1)[-1]; return self._json(self.jobs.context_results.get(job_id,{"status":"missing"}))
         return self._send(404,b"")
     def do_POST(self):
+        security_error=self._request_security_error(state_changing=True)
+        if security_error:return security_error
         path=urllib.parse.urlsplit(self.path).path
         if path=="/api/import":
             raw=self._body(); ctype=self.headers.get("Content-Type","")

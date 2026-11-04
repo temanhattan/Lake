@@ -8,10 +8,36 @@ class HttpHandlerTests(unittest.TestCase):
     def setUp(self):
         self.h=object.__new__(Handler); self.h.db=connect(":memory:"); self.h.config=Config();self.h.semantic=None;self.h.embeddings=None
         self.h.jobs=type("Jobs",(),{"enqueue":lambda *a,**k:None,"enqueue_context":lambda *a,**k:"job","context_results":{}})()
-        self.h.headers=Message(); self.h.wfile=io.BytesIO(); self.h.rfile=io.BytesIO()
+        self.h.headers=Message(); self.h.headers["Host"]="127.0.0.1:8765"; self.h.headers["Origin"]="http://127.0.0.1:8765"; self.h.wfile=io.BytesIO(); self.h.rfile=io.BytesIO()
         self.h.send_response=lambda *a:None; self.h.send_header=lambda *a:None; self.h.end_headers=lambda *a:None
     def tearDown(self): self.h.db.close()
     def response(self): return json.loads(self.h.wfile.getvalue())
+    def test_untrusted_host_is_rejected_for_read_and_write(self):
+        del self.h.headers["Host"]
+        self.h.headers["Host"]="lake.example"
+        self.h.path="/api/search?q=secret"; self.h.do_GET()
+        self.assertEqual(self.response()["error"],"Unexpected Host header")
+        self.h.wfile=io.BytesIO(); self.h.rfile=io.BytesIO(b"{}")
+        self.h.headers["Content-Length"]="2"; self.h.headers["Content-Type"]="application/json"
+        self.h.path="/api/import"; self.h.do_POST()
+        self.assertEqual(self.response()["error"],"Unexpected Host header")
+
+    def test_cross_origin_is_rejected_for_read_and_write(self):
+        del self.h.headers["Origin"]
+        self.h.headers["Origin"]="https://evil.example"
+        self.h.path="/api/search?q=secret"; self.h.do_GET()
+        self.assertEqual(self.response()["error"],"Cross-origin request rejected")
+        self.h.wfile=io.BytesIO(); self.h.rfile=io.BytesIO(b"{}")
+        self.h.headers["Content-Length"]="2"; self.h.headers["Content-Type"]="application/json"
+        self.h.path="/api/import"; self.h.do_POST()
+        self.assertEqual(self.response()["error"],"Cross-origin request rejected")
+
+    def test_state_changing_request_requires_same_origin_proof(self):
+        del self.h.headers["Origin"]
+        self.h.path="/api/import"; self.h.rfile=io.BytesIO(b"{}")
+        self.h.headers["Content-Length"]="2"; self.h.headers["Content-Type"]="application/json"
+        self.h.do_POST()
+        self.assertEqual(self.response()["error"],"Origin or Referer required")
     def test_page_import_search_and_reader(self):
         self.h.path="/"; self.h.do_GET(); self.assertIn(b"Lake",self.h.wfile.getvalue())
         self.assertIn(b"/static/entry.js",self.h.wfile.getvalue())

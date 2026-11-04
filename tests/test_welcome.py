@@ -20,6 +20,7 @@ class WelcomeEndpointTests(unittest.TestCase):
         self.handler.embeddings = None
         self.handler.jobs = None
         self.handler.headers = Message()
+        self.handler.headers["Host"] = "127.0.0.1:8765"
         self.handler.wfile = io.BytesIO()
         self.handler.send_response = lambda *args: None
         self.handler.send_header = lambda *args: None
