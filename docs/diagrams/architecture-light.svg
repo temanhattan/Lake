@@ -19,11 +19,11 @@
     <text x="175" y="249">Exports</text><text x="175" y="282">+ paste</text>
     <text x="421" y="249">Import</text><text x="421" y="282">+ dedupe</text>
     <text x="677" y="242" fill="#f7f4eb" font-size="29">SQLite</text><text x="677" y="279" fill="#f7f4eb" font-size="20">chats · cards · vectors</text>
-    <text x="966" y="249">Search</text><text x="966" y="282">FTS + vectors</text>
+    <text x="966" y="249">Search</text><text x="966" y="282">FTS5 + vectors</text>
     <text x="232" y="497">Local UI</text><text x="232" y="530" font-size="19">gallery + search</text>
     <text x="574" y="497">Merged ranks</text><text x="574" y="530" font-size="19">keyword + meaning</text>
     <text x="930" y="497">Read-only MCP</text><text x="930" y="530" font-size="19">stdio · local DB</text>
   </g>
-  <text x="600" y="608" fill="#146b60" font-family="LakeSans, sans-serif" font-size="24" text-anchor="middle">STAYS ON YOUR MACHINE</text>
+  <text x="600" y="608" fill="#146b60" font-family="LakeSans, sans-serif" font-size="24" text-anchor="middle">LOCAL BY DEFAULT · OLLAMA WHEN REQUESTED</text>
   <path d="M482 620 Q600 628 718 618" fill="none" stroke="#146b60" stroke-width="3" stroke-linecap="round"/>
 </svg>
