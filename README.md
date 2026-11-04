@@ -9,6 +9,7 @@ Private, local-first gallery for your AI chats: searchable, visual, and ready to
 
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-146b60?labelColor=26332f)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-146b60)](https://www.python.org/)
+[![CI](https://github.com/temanhattan/Lake/actions/workflows/ci.yml/badge.svg)](https://github.com/temanhattan/Lake/actions/workflows/ci.yml)
 
 <p align="center">
   <img src="docs/assets/readme/lake-walkthrough.gif" alt="Demo-only walkthrough of Lake's welcome wall, search, chat detail, and continue block" width="720">

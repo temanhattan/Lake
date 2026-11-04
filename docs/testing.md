@@ -3,6 +3,7 @@
 Run the application tests with:
 
 ```powershell
+python -m pip install -r requirements-dev.txt
 python -m unittest discover -s tests -v
 ```
 
