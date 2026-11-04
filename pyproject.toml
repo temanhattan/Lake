@@ -10,8 +10,9 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = {file = "LICENSE"}
 dependencies = [
-  "numpy>=1.26,<3",
-  "mcp>=1.2,<2",
+  "numpy==2.2.6",
+  "mcp==1.30.0",
+  "pydantic==2.14.2",
 ]
 
 [project.scripts]
