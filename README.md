@@ -61,23 +61,6 @@ serves the interface over loopback HTTP. Search fuses SQLite FTS5 keyword
 matches with local vector results. Cards and context blocks are generated
 only when you ask, through your configured local Ollama endpoint.
 
-<table>
-<tr>
-<td width="50%">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/search-dark.svg">
-  <img src="docs/diagrams/search-light.svg" alt="Lake search pipeline from a query through FTS5, vector search, rank fusion, and chat results">
-</picture>
-</td>
-<td width="50%">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/continue-dark.svg">
-  <img src="docs/diagrams/continue-light.svg" alt="Lake continue flow from a full conversation to a reusable card and compact context block">
-</picture>
-</td>
-</tr>
-</table>
-
 The diagrams and PNG fallbacks are reproducibly built from
 [docs/diagrams/src/](docs/diagrams/src/).
 
