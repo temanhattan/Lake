@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=75.0,<76"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lake-local"
+version = "0.1.0"
+description = "Private, local-first gallery for AI chats"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {file = "LICENSE"}
+dependencies = [
+  "numpy>=1.26,<3",
+  "mcp>=1.2,<2",
+]
+
+[project.scripts]
+lake = "lake.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["lake*"]
+
+[tool.setuptools.package-data]
+lake = ["static/**/*"]

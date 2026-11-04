@@ -56,11 +56,13 @@ def doctor(cfg,db):
 def main():
     args=sys.argv[1:]
     cfg=load_config()
-    if args and args[0] in {"doctor","diagnose"}:
+    command=args[0] if args else "serve"
+    if command in {"doctor","diagnose"}:
         db=connect(cfg.db_path);doctor(cfg,db);db.close();return
     db=connect(cfg.db_path)
-    if args and args[0]=="backup": backup(db,args[1] if len(args)>1 else "./backups"); return
-    if args and args[0]=="import-folder":
+    if command=="backup":
+        backup(db,args[1] if len(args)>1 else "./backups"); db.close(); return
+    if command in {"import","import-folder"}:
         folder=Path(args[1] if len(args)>1 else cfg.import_folder)
         total={"added":0,"updated":0,"skipped":0,"failed":[]}
         for file in folder.rglob("*"):

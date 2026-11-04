@@ -62,17 +62,18 @@ See [docs/privacy.md](docs/privacy.md) for boundaries and redaction details.
 ## Quick start
 
 ```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-Copy-Item config.example.toml config.toml
+pipx install "git+https://github.com/temanhattan/Lake.git"
 New-Item -ItemType Directory imports -Force
-Copy-Item demo\chatgpt\conversations.json imports\
-python -m lake import-folder
-python -m lake
+lake import .\imports
+lake serve
 ```
 
 Open <http://127.0.0.1:8765>, then import an export from **Import**. For Ollama setup and configuration options, see [docs/ollama.md](docs/ollama.md).
+
+For a source checkout, install the pinned development environment with
+`python -m pip install -r requirements-dev.txt`. Lake stores data under the
+per-user OS data directory by default; set `LAKE_DATA_DIR` or `data_dir` in
+`config.toml` to choose another location.
 
 ## Models
 
